@@ -34,5 +34,8 @@ require __DIR__.'/auth.php';
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'index'])->name('login');
+    //迁移用户
     Route::get('/migrateDkUsersToUsers',[UserMigrationController::class,'migrateDkUsersToUsers'])->name('migrateDkUsersToUsers');
+    //迁移部门
+    Route::get('/migrateDkDptToDpt',[UserMigrationController::class,'migrateDkDptToDpt'])->name('migrateDkDptToDpt');
 });

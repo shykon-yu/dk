@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserMigrationController extends Controller
 {
+    protected $chunkSize = 200;// 每次插200条，避免数据包太大
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrateDkUsersToUsers()
     {
@@ -32,13 +33,26 @@ class UserMigrationController extends Controller
                 'updated_at'    => now(),
             ];
         }
-        // 🔥 🔥 🔥 批量一次性插入（核心！只执行一次SQL）
-        $chunkSize = 200; // 每次插200条，避免数据包太大
-        foreach (array_chunk($userData, $chunkSize) as $chunk) {
+
+        foreach (array_chunk($userData, $this->chunkSize) as $chunk) {
             User::insert($chunk);
         }
 
         $total = count($userData);
         return "批量迁移完成！共导入 {$total} 条用户！";
+    }
+
+    public function migrateDkDptToDpt()
+    {
+        $oldDpts = DB::table('dk_department')->get();
+        $departmentData = [];
+        foreach( $oldDpts as $oldDpt ) {
+            if( $oldDpt->status == 1 ) {
+                $departmentData[] = [
+                    'name' => $oldDpt->department_name,
+                ];
+            }
+        }
+        dd($departmentData);
     }
 }

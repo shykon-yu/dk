@@ -1,11 +1,11 @@
 services:
     laravel.test:
         build:
-            context: './vendor/laravel/sail/runtimes/8.5'
+            context: ./vendor/laravel/sail/runtimes/8.5
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
-        image: 'sail-8.5/app'
+        image: sail-8.5/app
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -48,6 +48,19 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      restart: always
+      ports:
+        - '8080:80'          # 本机端口 8080 → 容器 80
+      environment:
+        PMA_HOST: mysql      # Sail 数据库服务名（固定）
+        PMA_PORT: 3306
+        MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}' # 从 .env 读取
+      networks:
+        - sail
+      depends_on:
+        - mysql
 networks:
     sail:
         driver: bridge

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -50,9 +51,14 @@ class UserMigrationController extends Controller
             if( $oldDpt->status == 1 ) {
                 $departmentData[] = [
                     'name' => $oldDpt->department_name,
+                    'status' => $oldDpt->status,
                 ];
             }
         }
-        dd($departmentData);
+        foreach( array_chunk($departmentData, $this->chunkSize) as $chunk ) {
+            Department::insert($chunk);
+        }
+        $total = count( $departmentData );
+        return "批量迁移完成！共导入 {$total} 条数据！";
     }
 }

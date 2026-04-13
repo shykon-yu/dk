@@ -24,13 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(MenuService $menuService)
     {
-        $menuService->clearMenuCache();
         view()->composer('admin.*', function ($view) use ($menuService) {
             if (auth()->check()) {
-                //$menuService->clearMenuCache();
-                $view->with('menu', $menuService->getAuthMenu());
+                $menuService->clearMenuCache();
+                //dd($menuService->getAuthMenu());
+                $view->with('admin_menus', $menuService->getAuthMenu());
             } else {
-                $view->with('menu', []);
+                $view->with('admin_menus', []);
             }
         });
     }

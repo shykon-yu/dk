@@ -35,7 +35,7 @@ class MenuService
         return Cache::remember($this->cacheMenuKey, $this->menuTtl, function () {
             return DB::table('menus')
                 ->where('status', 1)
-                ->orderBy('order')
+                ->orderBy('sort')
                 ->get()
                 ->map(function ($item) {
                     return (array)$item;

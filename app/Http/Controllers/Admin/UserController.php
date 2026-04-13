@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
+use App\Models\Scopes\ActiveScope;
 
 class UserController extends Controller
 {
@@ -14,6 +16,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $user_list = User::query()
+            ->withoutGlobalScope(ActiveScope::class)//取消全局作用域
             ->when($request->user_name, function ($q) use ($request) {
                 $q->where('user_name', 'like', "%{$request->user_name}%");
             })
@@ -28,7 +31,6 @@ class UserController extends Controller
 
     /**
      * 删除用户（单条 + 批量）
-     * 标准规范：加异常捕获
      */
     public function delete(Request $request)
     {

@@ -45,4 +45,24 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .rota {
+        transform: rotate(90deg);
+        display: inline-block;
+    }
+
+    /* 强制三级菜单靠左显示，不偏移、不跑到右边 */
+    .leftnav ul li ul {
+        margin-left: 0 !important;
+        padding-left: 20px !important;
+        left: auto !important;
+        right: auto !important;
+        position: static !important;
+        float: none !important;
+        display: none; /* 默认隐藏 */
+    }
+
+    /* 三级菜单里的文字靠左 */
+    .leftnav ul li ul li {
+        text-align: left !important;
+    }
 </style>

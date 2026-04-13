@@ -13,7 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::dropIfExists('dk_users');
+        Schema::table('menus', function (Blueprint $table) {
+            $table->string('permission')->after('route')->nullable();
+        });
     }
 
     /**
@@ -23,6 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('menus', function (Blueprint $table) {
+            $table->dropColumn('permission');
+        });
     }
 };

@@ -18,15 +18,22 @@
         // 日期控件
         $("#start_date, #end_date").datepicker({ maxDate: 0 });
 
-        // 左侧菜单折叠
         $(".leftnav h2").click(function () {
             $(this).next().slideToggle(200);
             $(this).toggleClass("on");
             $(this).find(".icon-caret-down").toggleClass("rota");
         });
 
-        // 菜单点击切换
-        $(".leftnav ul li a").click(function () {
+        // 二级菜单点击 → 展开/关闭三级菜单
+        $(".leftnav ul li a").click(function (e) {
+            // 如果当前下面有三级菜单，就展开/折叠
+            if ($(this).next("ul").length) {
+                e.preventDefault(); // 阻止跳转，只展开菜单
+                $(this).next("ul").slideToggle(200);
+                $(this).find(".icon-caret-right").toggleClass("rota");
+            }
+
+            // 右侧内容切换（你原来的逻辑不动）
             $(".default-body").hide();
             $("iframe").show();
         });

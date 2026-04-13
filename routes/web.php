@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\UserMigrationController;
+use App\Http\Controllers\Admin\TestController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserMigrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,18 +24,16 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';
-
+require __DIR__.'/admin.php';
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'index'])->name('login');
     //迁移用户
-    Route::get('/migrateDkUsersToUsers',[UserMigrationController::class,'migrateDkUsersToUsers'])->name('migrateDkUsersToUsers');
-    //迁移部门
-    Route::get('/migrateDkDptToDpt',[UserMigrationController::class,'migrateDkDptToDpt'])->name('migrateDkDptToDpt');
+    Route::get('/migrate',[UserMigrationController::class,'migrate'])->name('migrate');
 });
+
+

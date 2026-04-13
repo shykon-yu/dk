@@ -45,7 +45,7 @@
             <div class="media media-y margin-big-bottom"></div>
 
             <!-- 核心优化：对接Breeze登录路由 + CSRF令牌 -->
-            <form action="{{ route('login') }}" method="post" id="login">
+            <form action="{{ route('admin.login.submit') }}" method="post" id="login">
                 @csrf
                 <div class="loginbox webdesigntuts-workshop">
                     <div class="panel-body" style="padding:30px; padding-bottom:10px; padding-top:10px;">

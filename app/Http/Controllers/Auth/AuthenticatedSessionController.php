@@ -25,10 +25,15 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        //dd($request->routeIs('admin.login.submit'));
         $request->authenticate();
 
         $request->session()->regenerate();
+        if( $request->routeIs('admin.login.submit') ){
+            //return redirect()->intended(RouteServiceProvider::ADMIN_HOME);
+            return redirect()->intended(route('admin.dashboard'));
 
+        }
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
@@ -42,7 +47,9 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
-
+        if ($request->is('admin*') || $request->is('admin/*')) {
+            return redirect('/admin/login');
+        }
         return redirect('/');
     }
 }

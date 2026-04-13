@@ -10,9 +10,11 @@
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
-        "overtrue/laravel-lang": "~6.0"
+        "overtrue/laravel-lang": "~6.0",
+        "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "~3.6",
         "fakerphp/faker": "^1.9.1",
         "laravel/breeze": "^1.19",
         "laravel/pint": "^1.0",

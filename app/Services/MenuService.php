@@ -35,6 +35,7 @@ class MenuService
         return Cache::remember($this->cacheMenuKey, $this->menuTtl, function () {
             return DB::table('menus')
                 ->where('status', 1)
+                ->whereNull('deleted_at') // 加上这一行即可排除已删除
                 ->orderBy('sort')
                 ->get()
                 ->map(function ($item) {

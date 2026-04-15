@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleRequest;
-use App\Models\Permission; // 你的自定义权限模型
-use App\Models\Role;       // 你的自定义角色模型
+use App\Models\Permission;
+use App\Models\Role;
 use App\Services\ViewTableService;
 use Illuminate\Http\Request;
 use App\Models\Menu;
@@ -24,12 +24,10 @@ class RoleController extends Controller
             ->paginate(10);
         return view('admin.role.index', compact('roles', 'headers'));
     }
-    // 渲染添加角色页面
     public function create()
     {
         $menuTree = Menu::with('children')->where('parent_id', 0)->get()->toArray();
         $permissionMap = Permission::all()->groupBy('menu_id');
-
         return view('admin.role.create', compact('menuTree', 'permissionMap'));
     }
 
@@ -70,12 +68,10 @@ class RoleController extends Controller
     public function update(RoleRequest $request)
     {
         $validated = $request->validated();
-        //dd($validated);
         DB::beginTransaction();
         try {
             $role = Role::findOrFail($request->id);
 
-            // 更新角色
             $role->update([
                 'name' => $validated['name'],
             ]);
@@ -96,6 +92,54 @@ class RoleController extends Controller
             return response()->json([
                 'code' => 500,
                 'msg' => '更新失败：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function destroy(Role $role)
+    {
+        if ($role->name === '管理员') {
+            return response()->json(['code' => 400, 'msg' => '管理员无法删除']);
+        }
+
+        DB::beginTransaction();
+        try {
+            $role->permissions()->detach();
+            $role->delete();
+            DB::commit();
+
+            return response()->json(['code' => 200, 'msg' => '删除成功']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['code' => 500, 'msg' => '删除失败：' . $e->getMessage()]);
+        }
+    }
+
+    public function batchDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json(['code' => 400, 'msg' => '请选择要删除的角色']);
+        }
+        DB::beginTransaction();
+        try {
+            $roles = Role::whereIn('id', $ids)
+                ->where('name', '!=', '管理员')
+                ->get();
+
+            foreach ($roles as $role) {
+                $role->permissions()->detach();
+                $role->delete();
+            }
+
+            DB::commit();
+            return response()->json(['code' => 200, 'msg' => '批量删除成功']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'code' => 500,
+                'msg' => '批量删除失败：' . $e->getMessage()
             ]);
         }
     }

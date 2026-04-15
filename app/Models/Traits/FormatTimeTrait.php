@@ -3,6 +3,8 @@ namespace App\Models\Traits;
 use Carbon\Carbon;
 trait FormatTimeTrait{
     protected $appends = [
+        'created_at',
+        'updated_at',
         'created_at_date',
         'updated_at_date',
     ];

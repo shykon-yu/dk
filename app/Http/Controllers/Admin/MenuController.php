@@ -13,17 +13,23 @@ class MenuController extends Controller
 {
     // 完整权限
     protected $permissionSuffix = [
-        'index'   => '查看',
-        'store'   => '新增',
-        'update'  => '编辑',
-        'destroy' => '删除',
-        'audit'   => '审核',
-        'export'  => '导出',
-    ];
-
-    // 基础权限（只查看）
-    protected $permissionBasicSuffix = [
-        'index' => '查看',
+        'allSuffix' => [
+            'index'   => '查看',
+            'store'   => '新增',
+            'update'  => '编辑',
+            'destroy' => '删除',
+            'audit'   => '审核',
+            'export'  => '导出',
+        ],
+        'curdSuffix' => [
+            'index'   => '查看',
+            'store'   => '新增',
+            'update'  => '编辑',
+            'destroy' => '删除',
+        ],
+        'baseSuffix' => [
+            'index' => '查看',
+        ]
     ];
 
     // 提取权限前缀 + 模块名
@@ -87,7 +93,6 @@ class MenuController extends Controller
             ->orderBy('sort')
             ->get()
             ->toArray();
-
         return view('admin.menu.edit', compact('menu', 'allMenus'));
     }
 
@@ -99,40 +104,37 @@ class MenuController extends Controller
         try {
             $menu = Menu::findOrFail($validated['id']);
             $menu->update($validated);
-            $menu->load('children');
-            if( $menu->children->isEmpty() ) {
-                $menu = Menu::find($menu->parent_id);
-            }
-            // 如果填写了权限标识 → 自动生成权限
-            if (!empty($validated['permission'])) {
-                $suffix = $request->boolean('auto_create_permission')
-                    ? $this->permissionSuffix
-                    : $this->permissionBasicSuffix;
 
-                [$prefix, $moduleName] = $this->getPermissionPrefixAndModuleName(
-                    $validated['permission'],
-                    $validated['title']
-                );
+            // 如果填写了权限标识 → 自动生成权限
+            if ($request->post('create_permission_type')!=0) {
+                $suffix = $this->permissionSuffix[$request->post('create_permission_type')];
+                $prefix = trim($request->post('permission_prefix'));
+                $moduleName = trim($request->post('moduleName'));
                 foreach ($suffix as $action => $title) {
                     $newPermName = $prefix . '.' . $action; // 新权限标识
                     $newPermTitle = $moduleName . '-' . $title; // 新权限中文名称
-                    $permission = Permission::where('menu_id', $menu->id)
-                        ->where('name', 'like', '%.' . $action)
-                        ->first();
+                    //$permission = Permission::where('name', 'like', '%.' . $action)
+                    $permission = Permission::where('name',$newPermName)->first();
+
+                    //判断是否存在路由，存在路由说明是最下级菜单，不能绑定在权限menu_id上，需要查询父级id
+                    if( $request->has('route') && trim($request->post('route')) != '' ) {
+                        $menu_id = $menu->parent_id;
+                    }else{
+                        $menu_id = $menu->id;
+                    }
+
                     if ($permission) {
-                        if ($permission->name !== $newPermName || $permission->title !== $newPermTitle) {
                             $permission->update([
-                                'name' => $newPermName,
                                 'title' => $newPermTitle,
-                                'module' => $validated['title'],
+                                'module' => $moduleName,
+                                'menu_id' => $menu_id,
                             ]);
-                        }
                     } else {
                         Permission::create([
-                            'menu_id'    => $menu->id,
+                            'menu_id'    => $menu_id,
                             'name'       => $newPermName,
                             'title'      => $newPermTitle,
-                            'module'     => $validated['title'],
+                            'module' => $moduleName,
                             'guard_name' => 'web',
                         ]);
                     }
@@ -156,25 +158,29 @@ class MenuController extends Controller
     public function store(MenuRequest $request)
     {
         $validated = $request->validated();
-
         try {
             $menu = Menu::create($validated);
 
             // 自动生成权限
-            if (!empty($validated['permission'])) {
-                $suffix = $request->boolean('auto_create_permission')
-                    ? $this->permissionSuffix
-                    : $this->permissionBasicSuffix;
-
-                [$prefix, $moduleName] = $this->getPermissionPrefixAndModuleName(
-                    $validated['permission'],
-                    $validated['title']
-                );
+            if (!empty($validated['permission']) && $request->post('create_permission_type')!=0) {
+                $suffix = $this->permissionSuffix[$request->post('create_permission_type')];
+                $prefix = trim($request->post('permission_prefix'));
+                $moduleName = trim($request->post('moduleName'));
+//                [$prefix, $moduleName] = $this->getPermissionPrefixAndModuleName(
+//                    $validated['permission'],
+//                    $validated['title']
+//                );
+                //判断是否存在路由，存在路由说明是最下级菜单，不能绑定在权限menu_id上，需要查询父级id
+                if( $request->has('route') && trim($request->post('route')) != '' ) {
+                    $menu_id = $menu->id;
+                }else{
+                    $menu_id = $menu->parent_id;
+                }
 
                 foreach ($suffix as $action => $title) {
                     Permission::updateOrCreate(
                         [
-                            'menu_id' => $menu->id,
+                            'menu_id' => $menu_id,
                             'name' => $prefix . '.' . $action,
                             'title'      => $moduleName . '-' . $title,
                             'module'     => $validated['title'],
@@ -198,18 +204,28 @@ class MenuController extends Controller
     }
 
     // 删除菜单
-    public function destroy(Request $request)
+    public function destroy(Menu $menu)
     {
-        $request->validate([
-            'id' => 'required|exists:menus,id'
-        ]);
-
-        $menu = Menu::findOrFail($request->id);
         $menu->delete();
 
         return response()->json([
             'code' => 200,
             'msg'  => '删除成功'
+        ]);
+    }
+
+    public function batchDestroy(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'exists:menus,id'
+        ]);
+
+        Menu::destroy($request->ids);
+
+        return response()->json([
+            'code' => 200,
+            'msg'  => '批量删除成功'
         ]);
     }
 }

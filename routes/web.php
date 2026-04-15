@@ -1,8 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\TestController;
+use App\Http\Controllers\Admin\UserMigrationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\UserMigrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,9 +30,6 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
-Route::middleware('guest')->group(function () {
-    //迁移用户
-    Route::get('/migrate',[UserMigrationController::class,'migrate'])->name('migrate');
-});
+;
 
 

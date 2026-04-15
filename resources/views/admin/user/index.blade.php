@@ -3,27 +3,26 @@
 @section('content')
     <div class="panel panel-default">
         <div class="panel-heading">
-            <span class="glyphicon glyphicon-pencil"></span>
+            <span class="glyphicon glyphicon-user"></span>
             <span class="panel-tit">用户管理</span>
         </div>
 
         <div class="panel-body navbar-form">
-            <form method="get" action="{{ route('admin.user.index') }}" id="search">
-                <div class="input-group">
-                    <input id="user_name" type="text" name="user_name" autocomplete="off"
-                           placeholder="按用户名" class="form-control input-sm"
-                           value="{{ request('user_name') }}">
-                </div>
-                <div class="input-group">
-                    <input id="name" type="text" name="name" autocomplete="off"
-                           placeholder="姓名" class="form-control input-sm"
-                           value="{{ request('name') }}">
-                </div>
+            <!-- 搜索栏 -->
+            <form method="get" action="{{ route('admin.users.index') }}" id="search">
+                <input type="text" name="user_name" placeholder="用户名" class="form-control input-sm" value="{{ request('user_name') }}">
+                <input type="text" name="name" placeholder="姓名" class="form-control input-sm" value="{{ request('name') }}">
 
-                <button type="button" class="btn btn-success btn-sm" id="T">搜索</button>
+                <button type="button" class="btn btn-info btn-sm" id="T">搜索</button>
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
+
+                <!-- 新增用户按钮 -->
+                <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm pull-right">
+                    <span class="glyphicon glyphicon-plus"></span> 新增用户
+                </a>
             </form>
 
+            <!-- 表格 -->
             <table class="table table-bordered table-hover table-striped" id="log_form">
                 <thead>
                 <tr>
@@ -31,26 +30,28 @@
                     <th>序号</th>
                     <th>姓名</th>
                     <th>用户名</th>
+                    <th>角色</th>
                     <th>注册时间</th>
                     <th>操作</th>
                 </tr>
                 </thead>
-                <tbody id="order_list">
+                <tbody id="user_list">
                 @foreach($user_list as $key => $vo)
                     <tr class="text-center">
                         <td><input type="checkbox" name="one[]" value="{{ $vo->id }}"></td>
                         <td>{{ $key + 1 }}</td>
                         <td>{{ $vo->name }}</td>
                         <td>{{ $vo->username }}</td>
+                        <td>{{ $vo->roles->first()?->name }}</td>
                         <td>{{ $vo->created_at->format('Y-m-d') }}</td>
                         <td>
-                            <a href="{{ route('admin.user.edit', $vo->id) }}" class="text-info m-r-1">
+                            <a href="{{ route('admin.users.edit', $vo) }}" class="text-info m-r-1">
                                 <span class="glyphicon glyphicon-edit"></span> 编辑
                             </a>
-                            <a class="delete del_order" data-id="{{ $vo->id }}" style="cursor:pointer">
+                            <a href="javascript:;" class="delete del_user" data-id="{{ $vo->id }}">
                                 <span class="glyphicon glyphicon-remove"></span> 删除
                             </a>
-                            <a href="{{ route('admin.user.show', $vo->id) }}" class="details m-r-1">
+                            <a href="{{ route('admin.users.show', $vo) }}" class="details m-r-1">
                                 <span class="glyphicon glyphicon-list"></span> 详情
                             </a>
                         </td>
@@ -59,13 +60,13 @@
                 </tbody>
                 <tfoot>
                 <tr>
-                    <td colspan="6" class="text-center pagelist">
+                    <td colspan="7" class="text-center pagelist">
                         {{ $user_list->appends(request()->all())->links('pagination::bootstrap-4') }}
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="6">
-                        <button type="button" class="btn btn-danger btn-sm" id="delete_more">批量删除</button>
+                    <td colspan="7">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
                     </td>
                 </tr>
                 </tfoot>
@@ -76,64 +77,88 @@
 
 @section('script')
     <script>
-        //全选
+        // 全选/取消全选
         function checkAll() {
-            let all = document.getElementById('all');
-            let one = document.getElementsByName('one[]');
-            one.forEach(item => item.checked = all.checked);
+            let a = document.getElementById('all');
+            let b = document.getElementsByName('one[]');
+            for (let i = 0; i < b.length; i++) {
+                b[i].checked = a.checked;
+            }
         }
 
-        $(function () {
-            //搜索
+        $(function(){
+            // 单个删除
+            $("#user_list").on('click', ".del_user", function(){
+                if(!confirm("确定要删除吗？")) return false;
+
+                let id = $(this).data("id");
+                let obj = $(this);
+
+                $.ajax({
+                    url: "{{ route('admin.users.destroy', '') }}/" + id,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        _method: "DELETE"
+                    },
+                    dataType: "json",
+                    success: function(data){
+                        alert(data.msg);
+                        if(data.code === 200){
+                            obj.closest("tr").remove();
+                        }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "删除失败");
+                    }
+                });
+            });
+
+            // 搜索
             $('#T').click(function () {
                 $('#search').submit();
             });
 
-            //重置
+            // 重置
             $('#R').click(function () {
-                $('#user_name, #name').val('');
+                $('input[name="user_name"], input[name="name"]').val('');
                 $('#T').click();
             });
-
-            //单条删除
-            $(document).on('click', '.del_order', function () {
-                if (!confirm('确定删除？')) return;
-                let id = $(this).data('id');
-                let that = $(this);
-
-                $.post("{{ route('admin.user.delete') }}", {
-                    user_ids: id,
-                    _token: "{{ csrf_token() }}"
-                }, function (res) {
-                    alert(res.msg);
-                    if (res.code === 200) {
-                        that.parents('tr').remove();
-                    }
-                }, 'json');
-            });
-
-            //批量删除
-            $('#delete_more').click(function () {
-                if (!confirm('确定批量删除？')) return;
-                let ids = [];
-                $('input[name="one[]"]:checked').each(function () {
-                    ids.push($(this).val());
-                });
-                if (ids.length === 0) {
-                    alert('请选择用户');
-                    return;
-                }
-
-                $.post("{{ route('admin.user.delete') }}", {
-                    user_ids: ids.join(','),
-                    _token: "{{ csrf_token() }}"
-                }, function (res) {
-                    alert(res.msg);
-                    if (res.code === 200) {
-                        location.reload();
-                    }
-                }, 'json');
-            });
         });
+
+        // 批量删除
+        function Alldel() {
+            let ids = [];
+            $("input[name='one[]']:checked").each(function(){
+                ids.push($(this).val());
+            });
+
+            if(ids.length === 0){
+                alert("请选择要删除的用户！");
+                return false;
+            }
+
+            if(!confirm("确定要删除选中用户吗？")) return false;
+
+            $.ajax({
+                url: "{{ route('admin.users.batch.destroy') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    ids: ids,
+                    _method: "DELETE"
+                },
+                dataType: "json",
+                success: function(data){
+                    alert(data.msg);
+                    if(data.code === 200){
+                        window.location.reload();
+                    }
+                },
+                error: function(xhr){
+                    alert(xhr.responseJSON?.msg || "批量删除失败");
+                }
+            });
+        }
     </script>
 @endsection

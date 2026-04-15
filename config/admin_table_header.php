@@ -5,6 +5,7 @@ return [
         ['field' => 'id', 'name' => 'ID'],
         ['field' => 'title', 'name' => '菜单名称'],
         ['field' => 'route', 'name' => '路由'],
+        ['field' => 'permission', 'name' => '关联权限'],
         ['field' => 'sort', 'name' => '排序'],
         ['field' => 'created_at', 'name' => '创建时间'],
         ['field' => 'action', 'name' => '操作'],

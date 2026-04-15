@@ -1,0 +1,225 @@
+@extends('admin.layouts.app')
+
+@section('content')
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span class="glyphicon glyphicon-th-list"></span>
+            <span class="panel-tit">商品季节管理</span>
+        </div>
+
+        <div class="panel-body navbar-form">
+            <!-- 搜索栏 -->
+            <form method="get" action="{{ route('admin.goods.seasons.index') }}" id="search">
+                <input type="text" name="name" placeholder="季节名称" class="form-control input-sm" value="{{ request('name') }}">
+                <select name="year" class="form-control input-sm" style="width: auto; display: inline-block;">
+                    <option value="">全部年份</option>
+                    @foreach($years as $y)
+                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                            {{ $y }}
+                        </option>
+                    @endforeach
+                </select>
+                <select name="season" class="form-control input-sm" style="width: auto; display: inline-block;">
+                    <option value="">全部季节</option>
+                    @foreach($seasons as $k=>$v)
+                        <option value="{{ $k }}" {{ request('season') == $k ? 'selected' : '' }}>
+                            {{ $v }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <button type="button" class="btn btn-info btn-sm" id="T">搜索</button>
+                <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
+
+                <!-- 新增按钮 -->
+                <a href="{{ route('admin.goods.seasons.create') }}" class="btn btn-primary btn-sm pull-right">
+                    <span class="glyphicon glyphicon-plus"></span> 新增季节
+                </a>
+            </form>
+
+            <!-- 表格 -->
+            <table class="table table-bordered table-hover table-striped" id="log_form">
+                <thead>
+                <tr>
+                    <th><input id="all" name="all" type="checkbox" onclick="checkAll()"></th>
+                    <th>ID</th>
+                    <th>季节名称</th>
+                    <th>年份</th>
+                    <th>季节</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="season_list">
+                @foreach($goodsSeasonsList as $key => $vo)
+                    <tr class="text-center">
+                        <td><input type="checkbox" name="one[]" value="{{ $vo->id }}"></td>
+                        <td>{{ $vo->id }}</td>
+                        <td>{{ $vo->name }}</td>
+                        <td>{{ $vo->year }}</td>
+                        <td>
+                            {{\App\Enums\GoodsSeasonEnum::getName($vo->season)}}
+                        </td>
+                        <td class="change-status" style="cursor: pointer;" data-id="{{ $vo->id }}" data-status="{{ $vo->status }}">
+                            @if($vo->status == 1)
+                                <span class="label label-success">启用</span>
+                            @else
+                                <span class="label label-default">禁用</span>
+                            @endif
+                        </td>
+                        <td>{{ $vo->created_at_date }}</td>
+                        <td>
+                            <a href="{{ route('admin.goods.seasons.edit', $vo) }}" class="text-info m-r-1">
+                                <span class="glyphicon glyphicon-edit"></span> 编辑
+                            </a>
+                            <a href="javascript:;" class="delete del_season" data-id="{{ $vo->id }}">
+                                <span class="glyphicon glyphicon-remove"></span> 删除
+                            </a>
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="8" class="text-center pagelist">
+                        {{ $goodsSeasonsList->appends(request()->all())->links('pagination::bootstrap-4') }}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="8">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+@endsection
+
+@section('script')
+    <script>
+        // 全选/取消全选
+        function checkAll() {
+            let a = document.getElementById('all');
+            let b = document.getElementsByName('one[]');
+            for (let i = 0; i < b.length; i++) {
+                b[i].checked = a.checked;
+            }
+        }
+
+        $(function(){
+            // 单个删除
+            $("#season_list").on('click', ".del_season", function(){
+                if(!confirm("确定要删除吗？")) return false;
+
+                let id = $(this).data("id");
+                let obj = $(this);
+
+                $.ajax({
+                    url: "{{ route('admin.goods.seasons.destroy', '') }}/" + id,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        _method: "DELETE"
+                    },
+                    dataType: "json",
+                    success: function(data){
+                        alert(data.msg);
+                        if(data.code === 200){
+                            obj.closest("tr").remove();
+                        }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "删除失败");
+                    }
+                });
+            });
+
+            // 搜索
+            $('#T').click(function () {
+                $('#search').submit();
+            });
+
+            // 重置
+            $('#R').click(function () {
+                $('input[name="name"]').val('');
+                $('select[name="year"], select[name="season"]').val('');
+                $('#T').click();
+            });
+
+            //更换状态
+            // 切换启用/禁用状态
+            $("#season_list").on('click', ".change-status", function(){
+                let id = $(this).data("id");
+                let status = $(this).data("status");
+                let obj = $(this);
+
+                if(!confirm("确定要"+(status == 1 ? "禁用" : "启用")+"吗？")) return false;
+
+                $.ajax({
+                    url: "{{ route('admin.goods.seasons.status','') }}/"+id,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        status: status == 1 ? 0 : 1
+                    },
+                    dataType: "json",
+                    success: function(data){
+                        if(data.code === 200){
+                            // 更新页面显示
+                            if(data.status == 1){
+                                obj.html('<span class="label label-success">启用</span>');
+                                obj.data('status', 1);
+                            }else{
+                                obj.html('<span class="label label-default">禁用</span>');
+                                obj.data('status', 0);
+                            }
+                            alert(data.msg);
+                        }else{
+                            alert(data.msg || '操作失败');
+                        }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "操作失败");
+                    }
+                });
+            });
+        });
+
+        // 批量删除
+        function Alldel() {
+            let ids = [];
+            $("input[name='one[]']:checked").each(function(){
+                ids.push($(this).val());
+            });
+
+            if(ids.length === 0){
+                alert("请选择要删除的季节！");
+                return false;
+            }
+
+            if(!confirm("确定要删除选中季节吗？")) return false;
+
+            $.ajax({
+                url: "{{ route('admin.goods.seasons.batch.destroy') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    ids: ids,
+                    _method: "DELETE"
+                },
+                dataType: "json",
+                success: function(data){
+                    alert(data.msg);
+                    if(data.code === 200){
+                        window.location.reload();
+                    }
+                },
+                error: function(xhr){
+                    alert(xhr.responseJSON?.msg || "批量删除失败");
+                }
+            });
+        }
+    </script>
+@endsection

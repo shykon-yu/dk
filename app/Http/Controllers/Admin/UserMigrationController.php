@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Department;
-use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -13,9 +13,27 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateMenu();
+        $this->migrateSeason();
     }
 
+    public function migrateSeason()
+    {
+        $oldData = DB::table('dk_products_season')->get();
+        $data = [];
+        foreach ($oldData as $item) {
+            $year = explode('-', $item->year);
+            $data[] = [
+                'id' => $item->id,
+                'name' => $item->products_season_name,
+                'year' => $year[0],
+                'season' => $item->season,
+                'status' => $item->status,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        DB::table('goods_seasons')->insert($data);
+    }
     public function migrateMenu()
     {
         $menuData = DB::table('dk_column')->get();

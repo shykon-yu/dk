@@ -100,11 +100,43 @@
                 <div class="form-item">
                     <label class="label">生成权限：</label>
                     <div class="field">
-                        <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" name="auto_create_permission" value="1" checked>
-                            自动生成该模块【index、store、update、destroy、audit、export】全套权限，否则只生成index
-                        </label>
-                        <span style="color:#ff6666; font-size:12px; margin-left:10px;">建议首次创建时勾选，已生成可取消</span>
+                        <div style="display: flex; gap: 25px; align-items: center; flex-wrap: nowrap; padding-top: 2px;">
+                            <label style="margin:0; font-weight:normal; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                                <input type="radio" name="create_permission_type" value="0" checked>
+                                不生成
+                            </label>
+                            <label style="margin:0; font-weight:normal; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                                <input type="radio" name="create_permission_type" value="baseSuffix">
+                                只生成 index
+                            </label>
+                            <label style="margin:0; font-weight:normal; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                                <input type="radio" name="create_permission_type" value="curdSuffix">
+                                增删改查
+                            </label>
+                            <label style="margin:0; font-weight:normal; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                                <input type="radio" name="create_permission_type" value="allSuffix">
+                                生成全套权限
+                            </label>
+                        </div>
+                        <span style="color:#ff6666; font-size:12px; margin-left:0; margin-top:4px; display:block;">
+                            菜单创建时可自动生成权限
+                        </span>
+
+                        <!-- 权限配置项（默认隐藏） -->
+                        <div id="permissionConfig" style="display: none; margin-top: 10px; border:1px dashed #ccc; padding:8px 10px; border-radius:4px;">
+                            <div class="form-item" style="margin-bottom:8px;">
+                                <label class="label" style="width:80px;">权限前缀：</label>
+                                <div class="field">
+                                    <input type="text" name="permission_prefix" value="" class="form-control input-sm w50" placeholder="例如：admin.goods.seasons">
+                                </div>
+                            </div>
+                            <div class="form-item" style="margin-bottom:0;">
+                                <label class="label" style="width:80px;">权限模块：</label>
+                                <div class="field">
+                                    <input type="text" name="moduleName" value="" class="form-control input-sm w50" placeholder="例如：商品季节">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -124,7 +156,7 @@
                         <button type="button" class="btn btn-info btn-sm" id="submitBtn">
                             <span class="glyphicon glyphicon-ok"></span> 确认新增
                         </button>
-                        <a href="{{ route('admin.menu.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
+                        <a href="{{ route('admin.menus.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
                             <span class="glyphicon glyphicon-remove"></span> 取消返回
                         </a>
                     </div>
@@ -145,11 +177,12 @@
                 // 禁用按钮 + 加载状态
                 btn.prop("disabled", true).html("<span class='glyphicon glyphicon-refresh glyphicon-spin'></span> 提交中...");
 
-                $.post("{{ route('admin.menu.store') }}", formData, function(data){
+                $.post("{{ route('admin.menus.store') }}", formData, function(data){
                     alert(data.msg);
 
                     if (data.code === 200) {
-                        window.location.href = "{{ route('admin.menu.index') }}";
+                        window.location.reload();
+                        //window.location.href = "{{ route('admin.menus.index') }}";
                     }
                 }, 'json')
                     .fail(function(xhr){
@@ -160,6 +193,15 @@
                         btn.prop("disabled", false).html("<span class='glyphicon glyphicon-ok'></span> 确认新增");
                     });
             });
+        });
+        // 切换生成权限类型时显示/隐藏配置
+        $(document).on('change', 'input[name="create_permission_type"]', function(){
+            let val = $(this).val();
+            if(val == 0){
+                $("#permissionConfig").hide();
+            }else{
+                $("#permissionConfig").show();
+            }
         });
     </script>
 @endsection

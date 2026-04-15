@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Models\Menu;
+use Illuminate\Validation\Rule;
 
 class MenuRequest extends BaseRequest
 {
@@ -38,7 +39,11 @@ class MenuRequest extends BaseRequest
             }],
             'route'      => ['nullable', 'string', 'max:100'],
             'sort'       => ['nullable', 'integer', 'min:0'],
-            'auto_create_permission' => 'nullable|boolean',
+            'create_permission_type' => ['required'],
+            'permission_prefix' => ['nullable', 'string', 'max:30',
+                Rule::requiredIf( fn()=>request()->create_permission_type != 0 ),],
+            'moduleName' => ['nullable', 'string', 'max:50',
+                Rule::requiredIf( fn()=>request()->create_permission_type != 0 ),],
         ];
     }
 
@@ -60,6 +65,7 @@ class MenuRequest extends BaseRequest
             'route.max'      => '路由名称不能超过100个字符',
             'sort.integer'   => '排序号必须为整数',
             'sort.min'       => '排序号不能为负数',
+            'permission_prefix.required' => '权限前缀不能为空'
         ];
     }
 }

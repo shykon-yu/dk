@@ -4,9 +4,9 @@ function menu_route($routeName)
 {
     $params = [];
     $needUserRoutes = [
-        'admin.user.edit',
-        'admin.user.show',
-        'admin.user.update',
+        'admin.users.edit',
+        'admin.users.show',
+        'admin.users.update',
     ];
 
     // 如果路由需要用户ID → 自动注入当前登录用户ID

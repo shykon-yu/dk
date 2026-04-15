@@ -8,12 +8,12 @@
 
         <div class="panel-body navbar-form">
             <!-- 搜索栏 -->
-            <form method="get" action="{{ route('admin.role.index') }}" id="search">
+            <form method="get" action="{{ route('admin.roles.index') }}" id="search">
                 <input type="text" name="name" placeholder="角色名称" class="form-control input-sm" value="{{ request('name') }}">
                 <input type="submit" class="btn btn-info btn-sm" value="搜索" id="T">
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
 
-                <a href="{{ route('admin.role.create') }}" class="btn btn-primary btn-sm pull-right">
+                <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm pull-right">
                     <span class="glyphicon glyphicon-plus"></span> 新增角色
                 </a>
             </form>
@@ -42,11 +42,12 @@
                         <td>{{ $item->permissions->count() }} 个权限</td>
                         <td>{{ $item['created_at_date'] }}</td>
                         <td>
-                            <a class="text-info m-r-1 edit_order" href="{{ route('admin.role.edit', $item['id']) }}">
+                            <a class="text-info m-r-1 edit_order" href="{{ route('admin.roles.edit', $item) }}">
                                 <span class="glyphicon glyphicon-edit"></span> 编辑
                             </a>
+
                             @if($item->name !== 'super-admin')
-                                <a class="delete del_role" order_id="{{ $item['id'] }}">
+                                <a href="javascript:;" class="delete del_role" data-id="{{ $item->id }}">
                                     <span class="glyphicon glyphicon-remove"></span> 删除
                                 </a>
                             @else
@@ -71,31 +72,39 @@
     <script>
         // 全选/取消全选
         function checkAll() {
-            var a = document.getElementById('all');
-            var b = document.getElementsByName('one[]');
-            for (i = 0; i < b.length; i++) {
+            let a = document.getElementById('all');
+            let b = document.getElementsByName('one[]');
+            for (let i = 0; i < b.length; i++) {
                 b[i].checked = a.checked;
             }
         }
 
-        // 单个删除
         $(function(){
-            $("#role_list").on('click',".del_role",function(){
-                if (confirm("确定要删除吗？")) {
-                    var id = $(this).attr("order_id");
-                    var obj = $(this);
-                    $.post("{{ route('admin.role.delete') }}", {
+            // 单个删除
+            $("#role_list").on('click', ".del_role", function(){
+                if(!confirm("确定要删除吗？")) return false;
+
+                let id = $(this).data("id");
+                let obj = $(this);
+
+                $.ajax({
+                    url: "{{ route('admin.roles.destroy', '') }}/" + id,
+                    type: "POST",
+                    data: {
                         _token: "{{ csrf_token() }}",
-                        ids : id,
-                    }, function(data){
+                        _method: "DELETE"
+                    },
+                    dataType: "json",
+                    success: function(data){
                         alert(data.msg);
-                        if( data.code == 200 ){
-                            obj.parent().parent().remove();
+                        if(data.code === 200){
+                            obj.closest("tr").remove();
                         }
-                    }, 'json');
-                }else{
-                    return false;
-                }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "删除失败");
+                    }
+                });
             });
 
             // 重置按钮
@@ -103,26 +112,41 @@
                 $("input[name='name']").val("");
                 $("#T").click();
             });
-        })
+        });
 
         // 批量删除
         function Alldel() {
-            var arr = new Array();
-            $("input[type='checkbox']:checked").each(function () {
-                arr.push($(this).val());
+            let ids = [];
+            $("input[name='one[]']:checked").each(function(){
+                ids.push($(this).val());
             });
 
-            if (confirm("确定要删除选中角色吗？")) {
-                $.post("{{ route('admin.role.delete') }}", {
+            if(ids.length === 0){
+                alert("请选择要删除的角色！");
+                return false;
+            }
+
+            if(!confirm("确定要删除选中角色吗？")) return false;
+
+            $.ajax({
+                url: "{{ route('admin.roles.batch.destroy') }}",
+                type: "POST",
+                data: {
                     _token: "{{ csrf_token() }}",
-                    ids: arr
-                }, function (data) {
+                    ids: ids,
+                    _method: "DELETE"
+                },
+                dataType: "json",
+                success: function(data){
                     alert(data.msg);
-                    if (data.code == 200) {
+                    if(data.code === 200){
                         window.location.reload();
                     }
-                }, 'json');
-            }
+                },
+                error: function(xhr){
+                    alert(xhr.responseJSON?.msg || "批量删除失败");
+                }
+            });
         }
     </script>
 @endsection

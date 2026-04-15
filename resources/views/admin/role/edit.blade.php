@@ -150,7 +150,7 @@
                         <button type="button" class="btn btn-info btn-sm" id="submitBtn">
                             <span class="glyphicon glyphicon-ok"></span> 确认编辑
                         </button>
-                        <a href="{{ route('admin.role.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
+                        <a href="{{ route('admin.roles.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
                             <span class="glyphicon glyphicon-remove"></span> 取消返回
                         </a>
                     </div>
@@ -167,14 +167,14 @@
             $("#submitBtn").click(function(){
                 var formData = $("#editRoleForm").serialize();
                 var btn = $(this);
-
+                formData += "&_method=PATCH";
                 btn.prop("disabled", true).html("<span class='glyphicon glyphicon-refresh glyphicon-spin'></span> 提交中...");
 
-                $.post("{{ route('admin.role.update') }}", formData, function(data){
+                $.post("{{ route('admin.roles.update',$role->id) }}", formData, function(data){
                     alert(data.msg);
                     if (data.code === 200) {
                         window.location.reload();
-                       // window.location.href = "{{ route('admin.role.index') }}";
+                       // window.location.href = "{{ route('admin.roles.index') }}";
                     }
                 }, 'json')
                     .fail(function(xhr){

@@ -8,12 +8,12 @@
 
         <div class="panel-body navbar-form">
             <!-- 搜索栏 -->
-            <form method="get" action="{{ route('admin.menu.index') }}" id="search">
+            <form method="get" action="{{ route('admin.menus.index') }}" id="search">
                 <input type="text" name="title" placeholder="菜单名称" class="form-control input-sm" value="{{ request('title') }}">
                 <input type="submit" class="btn btn-info btn-sm" value="搜索" id="T">
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
 
-                <a href="{{ route('admin.menu.create') }}" class="btn btn-primary btn-sm pull-right">
+                <a href="{{ route('admin.menus.create') }}" class="btn btn-primary btn-sm pull-right">
                     <span class="glyphicon glyphicon-plus"></span> 新增菜单
                 </a>
             </form>
@@ -41,13 +41,14 @@
                         <td>{{ $item['id'] }}</td>
                         <td style="text-align:left; padding-left:10px;">{{ $item['title'] }}</td>
                         <td>{{ $item['route'] }}</td>
+                        <td>{{ $item['permission'] }}</td>
                         <td>{{ $item['sort'] }}</td>
                         <td>{{ $item['created_at_date'] }}</td>
                         <td>
-                            <a class="text-info m-r-1 edit_order" href="{{ route('admin.menu.edit', $item['id']) }}">
+                            <a class="text-info m-r-1 edit_order" href="{{ route('admin.menus.edit', $item['id']) }}">
                                 <span class="glyphicon glyphicon-edit"></span> 编辑
                             </a>
-                            <a class="delete del_menu" order_id="{{ $item['id'] }}">
+                            <a href="javascript:;" class="delete del_menu" data-id="{{ $item['id'] }}">
                                 <span class="glyphicon glyphicon-remove"></span> 删除
                             </a>
                         </td>
@@ -60,13 +61,14 @@
                             <td>{{ $sub['id'] }}</td>
                             <td style="text-align:left; padding-left:30px;">├─ {{ $sub['title'] }}</td>
                             <td>{{ $sub['route'] }}</td>
+                            <td>{{ $sub ['permission'] }}</td>
                             <td>{{ $sub['sort'] }}</td>
                             <td>{{ $sub['created_at_date'] }}</td>
                             <td>
-                                <a class="text-info m-r-1 edit_order" href="{{ route('admin.menu.edit', $sub['id']) }}">
+                                <a class="text-info m-r-1 edit_order" href="{{ route('admin.menus.edit', $sub['id']) }}">
                                     <span class="glyphicon glyphicon-edit"></span> 编辑
                                 </a>
-                                <a class="delete del_menu" order_id="{{ $sub['id'] }}">
+                                <a href="javascript:;" class="delete del_menu" data-id="{{ $sub['id'] }}">
                                     <span class="glyphicon glyphicon-remove"></span> 删除
                                 </a>
                             </td>
@@ -79,13 +81,14 @@
                                 <td>{{ $third['id'] }}</td>
                                 <td style="text-align:left; padding-left:50px;">├─ └─ {{ $third['title'] }}</td>
                                 <td>{{ $third['route'] }}</td>
+                                <td>{{ $third['permission'] }}</td>
                                 <td>{{ $third['sort'] }}</td>
                                 <td>{{ $third['created_at_date'] }}</td>
                                 <td>
-                                    <a class="text-info m-r-1 edit_order" href="{{ route('admin.menu.edit', $third['id']) }}">
+                                    <a class="text-info m-r-1 edit_order" href="{{ route('admin.menus.edit', $third['id']) }}">
                                         <span class="glyphicon glyphicon-edit"></span> 编辑
                                     </a>
-                                    <a class="delete del_menu" order_id="{{ $third['id'] }}">
+                                    <a href="javascript:;" class="delete del_menu" data-id="{{ $third['id'] }}">
                                         <span class="glyphicon glyphicon-remove"></span> 删除
                                     </a>
                                 </td>
@@ -96,14 +99,13 @@
                 </tbody>
             </table>
 
-            <!-- 批量删除 👇 这里改好了 -->
+            <!-- 批量删除 -->
             <div style="margin-top:15px; text-align:left;">
                 <input type="button" class="btn btn-danger btn-sm" value="批量删除" onclick="Alldel()">
             </div>
 
         </div>
     </div>
-
 @endsection
 
 @section('script')
@@ -117,24 +119,32 @@
             }
         }
 
-        // 单个删除
         $(function(){
+            // 单个删除（标准 DELETE）
             $("#menu_list").on('click',".del_menu",function(){
-                if (confirm("确定要删除吗？")) {
-                    var id = $(this).attr("order_id");
-                    var obj = $(this);
-                    $.post("{{ route('admin.menu.destroy') }}", {
+                if (!confirm("确定要删除吗？")) return false;
+
+                let id = $(this).data("id");
+                let obj = $(this);
+
+                $.ajax({
+                    url: "{{ route('admin.menus.destroy', '') }}/" + id,
+                    type: "POST",
+                    data: {
                         _token: "{{ csrf_token() }}",
-                        ids : id,
-                    }, function(data){
+                        _method: "DELETE"
+                    },
+                    dataType: "json",
+                    success: function(data){
                         alert(data.msg);
-                        if( data.code == 200 ){
-                            obj.parent().parent().remove();
+                        if(data.code === 200){
+                            obj.closest("tr").remove();
                         }
-                    }, 'json');
-                }else{
-                    return false;
-                }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "删除失败");
+                    }
+                });
             });
 
             // 重置按钮
@@ -142,26 +152,41 @@
                 $("input[name='title']").val("");
                 $("#T").click();
             });
-        })
+        });
 
-        // 批量删除
+        // 批量删除（标准 DELETE）
         function Alldel() {
-            var arr = new Array();
-            $("input[type='checkbox']:checked").each(function () {
-                arr.push($(this).val());
+            let ids = [];
+            $("input[name='one[]']:checked").each(function(){
+                ids.push($(this).val());
             });
 
-            if (confirm("确定要删除选中菜单吗？")) {
-                $.post("{{ route('admin.menu.destroy') }}", {
+            if(ids.length === 0){
+                alert("请选择要删除的菜单！");
+                return false;
+            }
+
+            if(!confirm("确定要删除选中菜单吗？")) return false;
+
+            $.ajax({
+                url: "{{ route('admin.menus.batch.destroy') }}",
+                type: "POST",
+                data: {
                     _token: "{{ csrf_token() }}",
-                    ids: arr
-                }, function (data) {
+                    ids: ids,
+                    _method: "DELETE"
+                },
+                dataType: "json",
+                success: function(data){
                     alert(data.msg);
-                    if (data.code == 200) {
+                    if(data.code === 200){
                         window.location.reload();
                     }
-                }, 'json');
-            }
+                },
+                error: function(xhr){
+                    alert(xhr.responseJSON?.msg || "批量删除失败");
+                }
+            });
         }
     </script>
 @endsection

@@ -13,9 +13,84 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateSeason();
+        $this->migrateCustom();
     }
 
+    public function migrateCustom(){
+        $oldData = DB::table("dk_supplier_company")->where('status',1)->get();
+        $data = [];
+        foreach ($oldData as $item){
+            $data[] = [
+                'id'=>$item->id,
+                'name'=>$item->supplier_company_name,
+                'supplier_category_id' =>$item->supplier_type_id,
+                'contact' =>$item->contract_person,
+                'phone' =>$item->phone,
+                'email' =>$item->email,
+                'address' =>$item->address,
+                'status' =>$item->status,
+                'remark' =>$item->remark,
+                'created_user_id'=>$item->user_id,
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ];
+        }
+        //dd($data);
+        DB::table('suppliers')->insert($data);
+    }
+    public function migrateCategory(){
+        $oldData = DB::table('dk_products_ingredients')->get();
+        $oldDataArray = [];
+        foreach($oldData as $item) {
+            $cn_arr = preg_split('/\s+/', $item->ingredients_cn_name);
+            $ko_arr = preg_split('/\s+/', $item->ingredients_kor_name);
+            $en_arr = preg_split('/\s+/', $item->ingredients_en_name);
+            foreach ($cn_arr as $key => $value) {
+                if( $key % 2 == 0 ){
+                    $new_arr = [
+                        'name' => $cn_arr[$key],
+                        'name_en' => $en_arr[$key],
+                        'name_ko' => $ko_arr[$key],
+                        'sort' => 0,
+                        'status' => 1,
+                    ];
+                    if(!in_array($new_arr, $oldDataArray) && !array_search($cn_arr[$key], array_column($oldDataArray, 'name')) ){
+                        array_push($oldDataArray, $new_arr);
+                    }
+                }
+            }
+        }
+        $data = [];
+        foreach ($oldDataArray as $key => $value) {
+            $data[] = [
+                'name' => $value['name'],
+                'name_en' => $value['name_en'],
+                'name_ko' => $value['name_kr'],
+                'sort' => 0,
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        DB::table('goods_components')->insert($data);
+    }
+    public function migerateCate(){
+        $oldData = DB::table('dk_products_type')->where('status', 1)->get();
+        $data = [];
+        foreach ($oldData as $value) {
+            $data[]=[
+                'old_id'=>$value->id,
+                'name'=>$value->products_type_name,
+                'parent_id'=>$value->products_category_id,
+                'level' => 2,
+                'status'=>1,
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ];
+        }
+        //dd($data);
+        DB::table('goods_categories')->insert($data);
+    }
     public function migrateSeason()
     {
         $oldData = DB::table('dk_products_season')->get();

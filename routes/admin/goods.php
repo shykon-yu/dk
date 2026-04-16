@@ -1,16 +1,19 @@
 <?php
-
 use App\Http\Controllers\Admin\Goods\GoodsSeasonController;
+use App\Http\Controllers\Admin\Goods\GoodsCategoryController;
+use App\Http\Controllers\Admin\Goods\GoodsComponentController;
+
+//季节
 Route::delete('goods/seasons/batch',[GoodsSeasonController::class,'batchDestroy'])->name('goods.seasons.batch.destroy');
 Route::post('goods/seasons/status/{season}',[GoodsSeasonController::class,'status'])->name('goods.seasons.status');
 Route::resource('goods/seasons', GoodsSeasonController::class)->names('goods.seasons');
 
+//分类
+Route::delete('goods/categories/batch',[GoodsCategoryController::class,'batchDestroy'])->name('goods.categories.batch.destroy');
+Route::post('goods/categories/status/{category}',[GoodsCategoryController::class,'status'])->name('goods.categories.status');
+Route::resource('goods/categories',GoodsCategoryController::class)->names('goods.categories');
 
-//Route::resource('goods/components', GoodsComponentController::class)->names([
-//    'index'   => 'goods.components.index',
-//    'create'  => 'goods.components.create',
-//    'store'   => 'goods.components.store',
-//    'edit'    => 'goods.components.edit',
-//    'update'  => 'goods.components.update',
-//    'destroy' => 'goods.components.destroy',
-//]);
+//成分
+Route::delete('goods/components/batch',[GoodsComponentController::class,'batchDestroy'])->name('goods.components.batch.destroy');
+Route::post('goods/components/status/{component}',[GoodsComponentController::class,'status'])->name('goods.components.status');
+Route::resource('goods/components', GoodsComponentController::class)->names('goods.components');

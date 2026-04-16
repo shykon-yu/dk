@@ -7,7 +7,6 @@ use App\Http\Requests\Admin\GoodsSeasonRequest;
 use App\Models\GoodsSeason;
 use App\Enums\GoodsSeasonEnum;
 use App\Services\Admin\Goods\GoodsSeasonService;
-use http\Env\Response;
 use Illuminate\Http\Request;
 
 class GoodsSeasonController extends Controller
@@ -20,7 +19,7 @@ class GoodsSeasonController extends Controller
 
     public function index(Request $request , GoodsSeason $goodsSeason)
     {
-        $params = $request->only('year','name','season');
+        $params = $request->only('year','name','season','page');
         $years = $this->goodsSeason->getYearsOptions();
         $seasons = GoodsSeasonEnum::getOptions();
         $goodsSeasonsList = $this->goodsSeason->getGoodsSeasonsList($params);
@@ -36,7 +35,7 @@ class GoodsSeasonController extends Controller
     public function store(GoodsSeasonRequest $request )
     {
         try{
-            $this->goodsSeason->storeGoodsSeason($request->only('year','name','season','status'));
+            $this->goodsSeason->store($request->only('year','name','season','status'));
             return response()->json([
                 'code' => 200,
                 'msg' => '新增成功',
@@ -57,7 +56,7 @@ class GoodsSeasonController extends Controller
     public function update(Request $request, GoodsSeason $season)
     {
         try{
-            $this->goodsSeason->updateGoodsSeason($season,$request->only('year','name','season','status'));
+            $this->goodsSeason->update($season,$request->only('year','name','season','status'));
             return response()->json([
                 'code' => 200,
                 'msg' => '修改成功'
@@ -73,7 +72,7 @@ class GoodsSeasonController extends Controller
     public function destroy(GoodsSeason $season)
     {
         try{
-            $this->goodsSeason->destroyGoodsSeason($season);
+            $this->goodsSeason->destroy($season);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功',
@@ -96,7 +95,7 @@ class GoodsSeasonController extends Controller
             ]);
         }
         try{
-            $this->goodsSeason->batchDestroyGoodsSeason($ids);
+            $this->goodsSeason->batchDestroy($ids);
             return response()->json([
                'code' => 200,
                'msg' => '删除成功'

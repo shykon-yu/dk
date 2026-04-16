@@ -1,69 +1,23 @@
 <?php
 namespace App\Services\Admin\Goods;
-
-use App\Http\Requests\Admin\GoodsSeasonRequest;
 use App\Models\GoodsSeason;
+use App\Services\Admin\BaseService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Pagination\LengthAwarePaginator;
 
-class GoodsSeasonService{
-    protected $goodsSeason;
-    public function __construct(GoodsSeason $goodsSeason)
+class GoodsSeasonService extends BaseService{
+    public function __construct()
     {
-        $this->goodsSeason = $goodsSeason;
-    }
-
-    public function storeGoodsSeason( $data )
-    {
-        try{
-            $this->goodsSeason->create( $data );
-            $this->flushGoodsSeasonsCache();
-            return true;
-        }catch ( \Exception $e ){
-            throw new \Exception( '新增失败'.$e->getMessage() );
-        }
-    }
-
-    public function updateGoodsSeason( GoodsSeason $goodsSeason,$data )
-    {
-        try{
-            $goodsSeason->update( $data );
-            $this->flushGoodsSeasonsCache();
-            return true;
-        }catch ( \Exception $e ){
-            throw new \Exception( $e->getMessage() );
-        }
-    }
-
-    public function destroyGoodsSeason(GoodsSeason $goodsSeason)
-    {
-        try{
-            $goodsSeason->delete();
-            $this->flushGoodsSeasonsCache();
-            return true;
-        }catch ( \Exception $e ){
-            throw new \Exception( $e->getMessage() );
-        }
-    }
-
-    public function batchDestroyGoodsSeason($ids)
-    {
-        try{
-            $this->goodsSeason->destroy($ids);
-            $this->flushGoodsSeasonsCache();
-            return true;
-        }catch ( \Exception $e ){
-            throw new \Exception( $e->getMessage() );
-        }
+        $this->modelClass = GoodsSeason::class;
+        $this->cacheKey = 'goods_seasons_all';
     }
 
     /**
      * 所有商品季节
      */
-    public function getGoodsSeasonsAll()
+    public function getCacheAll()
     {
-        return Cache::remember('goodsSeasonsList', 60*60*24*365 , function(){
-            return $this->goodsSeason
+        return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
+            return GoodsSeason::query()
                 //->orderBy('status', 'desc')
                 ->orderBy('year', 'desc')
                 ->orderBy('season', 'desc')
@@ -73,7 +27,7 @@ class GoodsSeasonService{
 
     public function getGoodsSeasonsList($params)
     {
-        $data = $this->getGoodsSeasonsAll(); // 从缓存拿全部
+        $data = $this->getCacheAll(); // 从缓存拿全部
 
         if (!empty($params['name'])) {
             $data = $data->filter(function ($item) use ($params) {
@@ -87,43 +41,17 @@ class GoodsSeasonService{
         if (isset($params['season'])) {
             $data = $data->where('season', $params['season']);
         }
-
-        // 分页（内存分页）
-        $perPage = $this->goodsSeason->getPerPage();
-        $page = $params['page'] ?? 1;
-        return new LengthAwarePaginator(
-            $data->forPage($page, $perPage),
-            $data->count(),
-            $perPage,
-            $page
-        );
+        return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
     /**
      * 年份列表
      */
     public function getYearsOptions()
     {
-        return $this->getGoodsSeasonsAll()
+        return $this->getCacheAll()
             ->pluck('year')
             ->unique()
             ->sortDesc()
             ->values();     // 重置索引（可选，让数组索引从0开始）
-    }
-
-    public function changeStatus(GoodsSeason $model,$status)
-    {
-        try{
-            $model->status = $status;
-            $model->save();
-            $this->flushGoodsSeasonsCache();
-            return $model;
-        }catch (\Exception $e){
-            throw new \Exception('状态修改失败'.$e->getMessage());
-        }
-    }
-
-    public function flushGoodsSeasonsCache()
-    {
-        Cache::forget('goodsSeasonsList');
     }
 }

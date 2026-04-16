@@ -18,7 +18,6 @@ class MenuService
         }
         //全局菜单
         $allMenu = $this->getAllMenu();
-        //dd($allMenu);
         //用户权限
         //$rolePerms = $this->getRolePermissions($user->role_id);
 //        //过滤
@@ -32,6 +31,7 @@ class MenuService
     }
     protected function getAllMenu()
     {
+//        $this->clearMenuCache();
         return Cache::remember($this->cacheMenuKey, $this->menuTtl, function () {
             return DB::table('menus')
                 ->where('status', 1)

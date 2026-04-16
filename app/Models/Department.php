@@ -2,17 +2,28 @@
 
 namespace App\Models;
 
+use App\Models\Traits\FormatTimeTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Department extends Model
+class Department extends Base
 {
-    use HasFactory;
+    use HasFactory , SoftDeletes , FormatTimeTrait;
     protected $fillable = ['name','status'];
-    const STATUS_ENABLE = 1;
-    const STATUS_DISABLE = 0;
+    protected $dates = ['deleted_at'];
     public function users()
     {
-        return $this->belongsToMany(User::class,'user_department','department_id','user_id');
+        return $this->belongsToMany(User::class,'user_department');
+    }
+
+    public function Customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function goods()
+    {
+        return $this->hasMany(Goods::class);
     }
 }

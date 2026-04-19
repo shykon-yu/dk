@@ -21,10 +21,11 @@ Route::resource('menus',MenuController::class);
 
 //客户管理
 Route::delete('customers/batch', [CustomerController::class, 'batchDestroy'])->name('customers.batch.destroy');
-Route::post('goods/customers/status/{department}',[CustomerController::class,'status'])->name('customers.status');
+Route::post('goods/customers/status/{customer}',[CustomerController::class,'status'])->name('customers.status');
 Route::resource('customers',CustomerController::class);
 //供应商管理
 Route::delete('suppliers/batch', [SupplierController::class, 'batchDestroy'])->name('suppliers.batch.destroy');
+Route::post('goods/suppliers/status/{supplier}',[SupplierController::class,'status'])->name('suppliers.status');
 Route::resource('suppliers',SupplierController::class);
 //部门管理
 Route::delete('departments/batch', [DepartmentController::class, 'batchDestroy'])->name('departments.batch.destroy');

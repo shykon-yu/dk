@@ -13,4 +13,9 @@ class GoodsSeason extends Base
     protected $fillable = [
       'name','year','season','status'
     ];
+
+    public function goods()
+    {
+        return $this->hasMany(Goods::class);
+    }
 }

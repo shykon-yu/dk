@@ -16,10 +16,10 @@ class GoodsCategoryService extends BaseService{
      */
     public function getCacheAll()
     {
-        $this->clearCache();
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return GoodsCategory::with('children')
                 ->where('parent_id', 0)
+                ->where('status', 1)
                 ->orderBy('sort', 'asc')
                 ->orderBy('id', 'desc')
                 ->get();
@@ -28,7 +28,7 @@ class GoodsCategoryService extends BaseService{
 
     public function getGoodsCategoriesList($params)
     {
-        $data = $this->getCacheAll(); // 从缓存拿全部
+        $data = $this->getAllWithoutTrashed(); // 从缓存拿全部
 
         if (!empty($params['name'])) {
             $data = $data->filter(function ($item) use ($params) {
@@ -37,11 +37,18 @@ class GoodsCategoryService extends BaseService{
         }
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
-    /**
-     * 一级列表
-     */
+
     public function getTopLevel()
     {
         return $this->getCacheAll();
+    }
+
+    public function getAllWithoutTrashed()
+    {
+        return $this->modelClass::with('children')
+            ->where('parent_id', 0)
+            ->orderBy('sort', 'asc')
+            ->orderBy('id', 'desc')
+            ->get();
     }
 }

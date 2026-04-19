@@ -13,9 +13,9 @@ class GoodsComponentService extends BaseService{
 
     public function getCacheAll()
     {
-        $this->clearCache();
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return GoodsComponent::query()
+                ->where('status', 1)
                 ->orderBy('sort', 'asc')
                 ->get();
         });
@@ -23,8 +23,7 @@ class GoodsComponentService extends BaseService{
 
     public function getGoodsComponentsList($params)
     {
-        $data = $this->getCacheAll(); // 从缓存拿全部
-
+        $data = $this->getAllWithoutTrashed(); // 从缓存拿全部
         if (!empty($params['name'])) {
             $data = $data->filter(function ($item) use ($params) {
                 return str_contains($item->name, $params['name']);
@@ -32,11 +31,5 @@ class GoodsComponentService extends BaseService{
         }
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
-    /**
-     * 一级列表
-     */
-    public function getTopLevel()
-    {
-        return $this->getCacheAll();
-    }
+
 }

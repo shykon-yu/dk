@@ -21,4 +21,8 @@ class GoodsCategory extends Model
     {
         return $this->hasMany(self::class,'parent_id');
     }
+    public function goods()
+    {
+        return $this->hasMany(Goods::class);
+    }
 }

@@ -13,6 +13,18 @@ class Customer extends Base
     protected $fillable = ['name','name_kr','parent_id','brand_logo','sku_prefix','clearance_id',
         'payment_id','contact','email','phone','address','department_id','status','remark','created_user_id','updated_user_id'];
     protected $dates = ['deleted_at'];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->created_user_id = auth()->id();
+            $model->updated_user_id = auth()->id();
+        });
+
+        static::updating(function ($model) {
+            $model->updated_user_id = auth()->id();
+        });
+    }
     public function department()
     {
         return $this->belongsTo(Department::class);

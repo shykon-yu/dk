@@ -35,91 +35,18 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span class="glyphicon glyphicon-plus"></span>
-            <span class="panel-tit">新增客户</span>
+            <span class="panel-tit">新增供应商</span>
         </div>
 
         <div class="panel-body navbar-form" style="padding-top: 20px;">
             <form id="createForm">
                 @csrf
 
-                <!-- 上级客户 -->
+                <!-- 供应商名称 -->
                 <div class="form-item">
-                    <label class="label">上级客户：</label>
+                    <label class="label">供应商名称：</label>
                     <div class="field">
-                        <select name="parent_id" class="form-control input-sm selectpicker" data-live-search="true" title="请选择上级客户">
-                            <option value="0">无上级</option>
-                            @foreach($_customers as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 所属部门 -->
-                <div class="form-item">
-                    <label class="label">所属部门：</label>
-                    <div class="field">
-                        <select name="department_id" class="form-control input-sm selectpicker" data-live-search="true" title="请选择部门" required>
-                            @foreach($_departments as $dept)
-                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 客户名称 -->
-                <div class="form-item">
-                    <label class="label">客户名称：</label>
-                    <div class="field">
-                        <input type="text" name="name" value="" placeholder="请输入客户名称" class="form-control input-sm w50" required>
-                    </div>
-                </div>
-
-                <!-- 韩文名称 -->
-                <div class="form-item">
-                    <label class="label">韩文名称：</label>
-                    <div class="field">
-                        <input type="text" name="name_kr" value="" placeholder="请输入韩文名称" class="form-control input-sm w50">
-                    </div>
-                </div>
-
-                <!-- 品牌LOGO -->
-                <div class="form-item">
-                    <label class="label">品牌LOGO：</label>
-                    <div class="field">
-                        <input type="text" name="brand_logo" value="" placeholder="请输入品牌LOGO" class="form-control input-sm w50">
-                    </div>
-                </div>
-
-                <!-- 货号前缀 -->
-                <div class="form-item">
-                    <label class="label">货号前缀：</label>
-                    <div class="field">
-                        <input type="text" name="sku_prefix" value="" placeholder="请输入货号前缀" class="form-control input-sm w50">
-                    </div>
-                </div>
-
-                <!-- 清关方式 -->
-                <div class="form-item">
-                    <label class="label">清关方式：</label>
-                    <div class="field">
-                        <select name="clearance_id" class="form-control input-sm selectpicker" data-live-search="true" title="请选择清关方式" required>
-                            @foreach($_clearances as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 支付方式 -->
-                <div class="form-item">
-                    <label class="label">支付方式：</label>
-                    <div class="field">
-                        <select name="payment_id" class="form-control input-sm selectpicker" data-live-search="true" title="请选择支付方式" required>
-                            @foreach($_payments as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="name" value="" placeholder="请输入供应商名称" class="form-control input-sm w50" required>
                     </div>
                 </div>
 
@@ -191,7 +118,7 @@
                         <button type="button" class="btn btn-info btn-sm" id="submitBtn">
                             <span class="glyphicon glyphicon-ok"></span> 确认新增
                         </button>
-                        <a href="{{ route('admin.customers.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
+                        <a href="{{ route('admin.suppliers.index') }}" class="btn btn-warning btn-sm" style="margin-left:10px;">
                             <span class="glyphicon glyphicon-remove"></span> 取消返回
                         </a>
                     </div>
@@ -204,18 +131,16 @@
 @section('script')
     <script type="text/javascript">
         $(function(){
-            $('.selectpicker').selectpicker();
-
             $("#submitBtn").click(function(){
                 var formData = $("#createForm").serialize();
                 var btn = $(this);
 
                 btn.prop("disabled", true).html("<span class='glyphicon glyphicon-refresh glyphicon-spin'></span> 提交中...");
 
-                $.post("{{ route('admin.customers.store') }}", formData, function(data){
+                $.post("{{ route('admin.suppliers.store') }}", formData, function(data){
                     alert(data.msg);
                     if (data.code === 200) {
-                        window.location.href = "{{ route('admin.customers.index') }}";
+                        window.location.href = "{{ route('admin.suppliers.index') }}";
                     }
                 }, 'json')
                     .fail(function(xhr){

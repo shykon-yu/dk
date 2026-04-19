@@ -8,5 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Base extends Model
 {
     use HasFactory;
-    protected $perPage = 20;
+    protected $perPage = 50;
 }

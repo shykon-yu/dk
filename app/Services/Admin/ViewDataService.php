@@ -4,6 +4,10 @@ namespace App\Services\Admin;
 //use App\Services\Admin\SupplierService;
 // 你以后的其他 Service 都可以加进来
 
+use App\Services\Admin\Goods\GoodsCategoryService;
+use App\Services\Admin\Goods\GoodsComponentService;
+use App\Services\Admin\Goods\GoodsSeasonService;
+
 class ViewDataService
 {
     /**
@@ -17,8 +21,10 @@ class ViewDataService
             '_customers'   => $this->getCustomers(),
             '_clearances'   => $this->getClearances(),
             '_payments'     => $this->getPayments(),
-           // '_suppliers'   => $this->getSuppliers(),
-            // 继续加...
+            '_suppliers'   => $this->getSuppliers(),
+            '_goods_categories' => $this->getGoodsCategories(),
+            '_goods_seasons' => $this->getGoodsSeasons(),
+            '_goods_components' => $this->getGoodsComponents(),
         ];
     }
 
@@ -46,10 +52,26 @@ class ViewDataService
         return app(PaymentService::class)->getCacheAll();
     }
     // 获取供应商
-//    public function getSuppliers()
-//    {
-//        return app(SupplierService::class)->getCacheAll();
-//    }
+    public function getSuppliers()
+    {
+        return app(SupplierService::class)->getCacheAll();
+    }
 
-    // 你以后只需要在这里加方法
+    //商品分类
+    public function getGoodsCategories()
+    {
+        return app(GoodsCategoryService::class)->getCacheAll();
+    }
+
+    //商品季节
+    public function getGoodsSeasons()
+    {
+        return app(GoodsSeasonService::class)->getCacheAll();
+    }
+
+    //商品成分
+    public function getGoodsComponents()
+    {
+        return app(GoodsComponentService::class)->getCacheAll();
+    }
 }

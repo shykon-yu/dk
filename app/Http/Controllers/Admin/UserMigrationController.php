@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Models\Goods;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Models\Sku;
 
 class UserMigrationController extends Controller
 {
@@ -13,7 +15,67 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateCustom();
+        $this->migrateimage();
+    }
+
+    public function migrateimage(){
+        $oldData = DB::table('dk_products_color')->whereNotNull('item_no')->get();
+        $data = [];
+        foreach ($oldData as $item){
+            $isset = DB::table('goods')->where('id',$item->products_id)->first();
+            if( is_null($isset) ){
+                continue;
+            }
+            $data[] = [
+                'id' => $item->id,
+                'size' => 'os',
+                'goods_id'=>$item->products_id,
+                'color' => $item->color_name,
+                'status' => $item->status,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'stock' => 0,
+                'sell_price' => $item->sell_price,
+                'sell_price2' => $item->sell_price2,
+                'cost_price' => $item->purchase_price,
+                'cost_price2' => $item->purchase_price2,
+                'process_price' => $item->process_price,
+                'process_step2_price' => $item->process_price2,
+            ];
+        }
+        foreach ($data as $item) {
+            Sku::create($item);
+        }
+    }
+    public function migrateGoods()
+    {
+        $data = [];
+        $oldData = DB::table('dk_products')->get();
+        foreach ($oldData as $item) {
+            $data[] = [
+                'id' => $item->id,
+                'department_id' => $item->department_id,
+                'customer_id' => $item->custom_id,
+                'supplier_id' => $item->supplier_company_id,
+                'name' => $item->products_name,
+                'customer_sku' => $item->item_no,
+                'brand_logo' => $item->brand_logo,
+                'category_id' => $item->products_category_id,
+                'season_id' => $item->products_season_id,
+                'status' => $item->status,
+                'is_star' => $item->star_marks,
+                'main_image' => $item->products_image_id,
+                'remark' => $item->remark,
+                'created_at' => $item->add_time_date,
+                'updated_at' => $item->update_time_date,
+                'created_user_id' => $item->user_id,
+            ];
+        }
+        foreach(array_chunk($data, 30) as $chunk) {
+            foreach ($chunk as $item) {
+                Goods::create($item);
+            }
+        }
     }
 
     public function migrateCustom(){

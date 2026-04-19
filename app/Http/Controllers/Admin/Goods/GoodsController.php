@@ -1,40 +1,39 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Goods;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\CustomerRequest;
-use App\Http\Requests\Admin\DepartmentRequest;
-use App\Models\Customer;
-use App\Services\Admin\CustomerService;
+use App\Services\Admin\Goods\GoodsService;
 use Illuminate\Http\Request;
 
-class CustomerController extends Controller
+class GoodsController extends Controller
 {
-    protected $customerService;
-    public function __construct(CustomerService $customerService)
+    protected $goodsService;
+    public function __construct(GoodsService $goodsService)
     {
-        $this->customerService = $customerService;
+        $this->goodsService = $goodsService;
 
     }
 
     public function index(Request $request)
     {
         $params = $request->only('name','page');
-        $list = $this->customerService->getCustomersList($params);
-        return view('admin.customer.index', compact('list'));
+        $list = $this->goodsService->getGoodsList($params);
+        return view('admin.goods.index', compact('list'));
     }
 
     public function create()
     {
-        return view('admin.customer.create');
+        $parentCategories = $this->goodsCategoryService->getTopLevel();
+        return view('admin.goods.category.create', compact('parentCategories'));
     }
 
-    public function store( DepartmentRequest $request )
+    public function store(GoodsCategoryRequest $request )
     {
-//        dd($request->all());
+        $level = $request->input('parent_id')==0?1:2;
+        $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
         try{
-            $this->customerService->store($request->all());
+            $this->goodsCategoryService->store($data);
             return response()->json([
                 'code' => 200,
                 'msg' => '新增成功',
@@ -46,15 +45,18 @@ class CustomerController extends Controller
             ]);
         }
     }
-    public function edit(Customer $customer)
+    public function edit(GoodsCategory $category)
     {
-        return view('admin.customer.edit', compact('customer'));
+        $parentCategories = $this->goodsCategoryService->getTopLevel();
+        return view('admin.goods.category.edit', compact('category', 'parentCategories'));
     }
 
-    public function update(Customer $customer , CustomerRequest $request)
+    public function update(GoodsCategoryRequest $request, GoodsCategory $category)
     {
+        $level = $request->input('parent_id')==0?1:2;
+        $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
         try{
-            $this->customerService->update($customer,$request->all());
+            $this->goodsCategoryService->update($category,$data);
             return response()->json([
                 'code' => 200,
                 'msg' => '修改成功'
@@ -67,10 +69,10 @@ class CustomerController extends Controller
         }
     }
 
-    public function destroy(Customer $customer)
+    public function destroy(GoodsCategory $category)
     {
         try{
-            $this->customerService->destroy($customer);
+            $this->goodsCategoryService->destroy($category);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功',
@@ -93,7 +95,7 @@ class CustomerController extends Controller
             ]);
         }
         try{
-            $this->customerService->batchDestroy($ids);
+            $this->goodsCategoryService->batchDestroy($ids);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功'
@@ -106,14 +108,14 @@ class CustomerController extends Controller
         }
     }
 
-    public function status(Request $request , Customer $customer)
+    public function status(Request $request , GoodsCategory $category)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
         try{
-            $customer = $this->customerService->changeStatus($customer, $request->status);
+            $category = $this->goodsCategoryService->changeStatus($category, $request->status);
             return response()->json([
                 'code'=>200,
-                'status'=>$customer->status,
+                'status'=>$category->status,
                 'msg' => '状态修改成功',
             ]);
         }catch (\Exception $e){

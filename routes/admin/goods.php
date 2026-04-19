@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\Admin\Goods\GoodsController;
 use App\Http\Controllers\Admin\Goods\GoodsSeasonController;
 use App\Http\Controllers\Admin\Goods\GoodsCategoryController;
 use App\Http\Controllers\Admin\Goods\GoodsComponentController;
@@ -17,3 +19,9 @@ Route::resource('goods/categories',GoodsCategoryController::class)->names('goods
 Route::delete('goods/components/batch',[GoodsComponentController::class,'batchDestroy'])->name('goods.components.batch.destroy');
 Route::post('goods/components/status/{component}',[GoodsComponentController::class,'status'])->name('goods.components.status');
 Route::resource('goods/components', GoodsComponentController::class)->names('goods.components');
+
+//商品
+Route::delete('goods/batch',[GoodsController::class,'batchDestroy'])->name('goods.batch.destroy');
+Route::post('goods/status/{goods}',[GoodsController::class,'status'])->name('goods.status');
+Route::post('goods/star/{goods}',[GoodsController::class,'star'])->name('goods.star');
+Route::resource('goods', GoodsController::class);

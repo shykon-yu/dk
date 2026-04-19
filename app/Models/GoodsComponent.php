@@ -13,8 +13,8 @@ class GoodsComponent extends Base
     protected $fillable = ['name','name_en','name_kr','sort','status'];
     protected $dates = ['deleted_at'];
 
-//    public function goods()
-//    {
-//        return $this->belongsToMany()
-//    }
+    public function goods()
+    {
+        return $this->hasMany(Goods::class);
+    }
 }

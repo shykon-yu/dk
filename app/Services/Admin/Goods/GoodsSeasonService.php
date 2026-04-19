@@ -18,7 +18,7 @@ class GoodsSeasonService extends BaseService{
     {
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return GoodsSeason::query()
-                //->orderBy('status', 'desc')
+                ->where('status', 1)
                 ->orderBy('year', 'desc')
                 ->orderBy('season', 'desc')
                 ->get();
@@ -27,7 +27,7 @@ class GoodsSeasonService extends BaseService{
 
     public function getGoodsSeasonsList($params)
     {
-        $data = $this->getCacheAll(); // 从缓存拿全部
+        $data = $this->getAllWithoutTrashed(); // 从缓存拿全部
 
         if (!empty($params['name'])) {
             $data = $data->filter(function ($item) use ($params) {
@@ -53,5 +53,13 @@ class GoodsSeasonService extends BaseService{
             ->unique()
             ->sortDesc()
             ->values();     // 重置索引（可选，让数组索引从0开始）
+    }
+
+    public function getAllWithoutTrashed()
+    {
+        return GoodsSeason::query()
+            ->orderBy('year', 'desc')
+            ->orderBy('season', 'desc')
+            ->get();
     }
 }

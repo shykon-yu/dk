@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
 
             // 菜单
             if (auth()->check()) {
-                $menuService->clearMenuCache();
+                //$menuService->clearMenuCache();
                 $view->with('admin_menus', $menuService->getAuthMenu());
             } else {
                 $view->with('admin_menus', []);

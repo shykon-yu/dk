@@ -30,6 +30,7 @@ class Goods extends Base
         });
     }
 
+    //生成内部code
     public static function generateGoodsCode()
     {
         $year = date('y');
@@ -46,6 +47,31 @@ class Goods extends Base
         $code = $prefix . str_pad($num, 6, '0', STR_PAD_LEFT);
         return $code;
     }
+
+    //获取成分组合名称
+    public function getComponentTextAttribute()
+    {
+        return $this->components->map(function($item) {
+            return $item->name . ' ' . format_decimal($item->pivot->percent) . '%';
+        })->implode(' ');
+    }
+
+    //获取成分组合英文名称
+    public function getComponentEnTextAttribute()
+    {
+        return $this->components->map(function($item) {
+            return $item->name_en . ' ' . format_decimal($item->pivot->percent) . '%';
+        })->implode(' ');
+    }
+
+    //获取成分组合韩文名称
+    public function getComponentKrTextAttribute()
+    {
+        return $this->components->map(function($item) {
+            return $item->name_kr . ' ' . format_decimal($item->pivot->percent) . '%';
+        })->implode(' ');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class,'created_user_id');
@@ -80,12 +106,17 @@ class Goods extends Base
         return $this->belongsTo(GoodsSeason::class);
     }
 
-    public function component()
+    public function components()
     {
-        return $this->belongsTo(GoodsComponent::class);
+        return $this->belongsToMany(GoodsComponent::class,'goods_goods_component')->withPivot('percent');
     }
 
     public function skus(){
         return $this->hasMany(Sku::class);
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(GoodsSkuStock::class,'goods_id','id');
     }
 }

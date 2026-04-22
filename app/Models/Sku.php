@@ -11,7 +11,7 @@ class Sku extends Base
 {
     use HasFactory , SoftDeletes , FormatTimeTrait;
     protected $fillable = ['id','goods_id','color','size','stock','sell_price','sell_price2','cost_price','cost_price2',
-        'process_price','process_step2_price','status','created_user_id','updated_user_id'];
+        'process_price','process_step2_price','status','sell_currency_id','cost_currency_id'];
     protected $dates = ['deleted_at'];
 
     protected static function booted()
@@ -25,5 +25,9 @@ class Sku extends Base
     public function goods()
     {
         return $this->belongsTo(Goods::class,'goods_id');
+    }
+    public function stocks()
+    {
+        return $this->hasMany(GoodsSkuStock::class,'sku_id','id');
     }
 }

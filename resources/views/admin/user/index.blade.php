@@ -31,6 +31,8 @@
                     <th>姓名</th>
                     <th>用户名</th>
                     <th>角色</th>
+                    <th>部门</th>
+                    <th>状态</th>
                     <th>注册时间</th>
                     <th>操作</th>
                 </tr>
@@ -43,16 +45,39 @@
                         <td>{{ $vo->name }}</td>
                         <td>{{ $vo->username }}</td>
                         <td>{{ $vo->roles->first()?->name }}</td>
+                        <td>
+                            <div data-toggle="tooltip"
+                                 data-placement="top"
+                                 data-container="body"
+                                 title="{{ $vo->departments_name ?? '-' }}"
+                                 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; display: inline-block;">
+                                {{ Str::limit($vo->departments_name ?? '-', 20) }}
+                            </div>
+                        </td>
+                        <td class="change-status" style="cursor:pointer" data-id="{{ $vo->id }}" data-status="{{ $vo->status }}">
+                            @can('admin.user.update')
+                                @if($vo->status)
+                                    <span class="label label-success">启用</span>
+                                @else
+                                    <span class="label label-default">禁用</span>
+                                @endif
+                            @endcan
+
+                        </td>
                         <td>{{ $vo->created_at->format('Y-m-d') }}</td>
                         <td>
+                            @can('admin.user.update')
                             <a href="{{ route('admin.users.edit', $vo) }}" class="text-info m-r-1">
-                                <span class="glyphicon glyphicon-edit"></span> 编辑
+                                <span class="glyphicon glyphicon-edit">编辑</span>
                             </a>
+                            @endcan
+                            @can('admin.user.destroy')
                             <a href="javascript:;" class="delete del_user" data-id="{{ $vo->id }}">
-                                <span class="glyphicon glyphicon-remove"></span> 删除
+                                <span class="glyphicon glyphicon-remove">删除</span>&nbsp;
                             </a>
+                            @endcan
                             <a href="{{ route('admin.users.show', $vo) }}" class="details m-r-1">
-                                <span class="glyphicon glyphicon-list"></span> 详情
+                                <span class="glyphicon glyphicon-list">详情</span>
                             </a>
                         </td>
                     </tr>
@@ -66,7 +91,9 @@
                 </tr>
                 <tr>
                     <td colspan="7">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
+                        @can('admin.user.destroy')
+                            <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
+                        @endcan
                     </td>
                 </tr>
                 </tfoot>
@@ -112,6 +139,27 @@
                         alert(xhr.responseJSON?.msg || "删除失败");
                     }
                 });
+            });
+
+            // 状态切换
+            $("#user_list").on('click', ".change-status", function () {
+                let id = $(this).data('id');
+                let now = $(this).data('status');
+                let to = now == 1 ? 0 : 1;
+                if (!confirm("确定" + (to ? "启用" : "禁用") + "？")) return false;
+
+                $.post("{{ route('admin.users.status','') }}/" + id, {
+                    _token: "{{ csrf_token() }}",
+                    status: to
+                }, res => {
+                    if (res.code === 200) {
+                        let html = res.status == 1
+                            ? '<span class="label label-success">启用</span>'
+                            : '<span class="label label-default">禁用</span>';
+                        $(this).html(html).data('status', res.status);
+                    }
+                    alert(res.msg);
+                }).fail(err => alert('操作失败'));
             });
 
             // 搜索

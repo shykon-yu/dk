@@ -12,7 +12,6 @@ class PaymentService extends BaseService{
 
     public function getCacheAll()
     {
-        $this->clearCache();
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return Payment::where('status', 1)
                 ->orderBy('sort' , 'asc')

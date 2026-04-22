@@ -14,21 +14,21 @@ class MenuController extends Controller
     // 完整权限
     protected $permissionSuffix = [
         'allSuffix' => [
-            'index'   => '查看',
-            'store'   => '新增',
+            'view'   => '查看',
+            'create'   => '新增',
             'update'  => '编辑',
-            'destroy' => '删除',
+            'delete' => '删除',
             'audit'   => '审核',
             'export'  => '导出',
         ],
         'curdSuffix' => [
-            'index'   => '查看',
-            'store'   => '新增',
+            'view'   => '查看',
+            'create'   => '新增',
             'update'  => '编辑',
-            'destroy' => '删除',
+            'delete' => '删除',
         ],
         'baseSuffix' => [
-            'index' => '查看',
+            'view' => '查看',
         ]
     ];
 

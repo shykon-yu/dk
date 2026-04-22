@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\Goods\GoodsController;
 use App\Http\Controllers\Admin\Goods\GoodsSeasonController;
 use App\Http\Controllers\Admin\Goods\GoodsCategoryController;
@@ -24,4 +25,7 @@ Route::resource('goods/components', GoodsComponentController::class)->names('goo
 Route::delete('goods/batch',[GoodsController::class,'batchDestroy'])->name('goods.batch.destroy');
 Route::post('goods/status/{goods}',[GoodsController::class,'status'])->name('goods.status');
 Route::post('goods/star/{goods}',[GoodsController::class,'star'])->name('goods.star');
+Route::post('goods/upload/image',[GoodsController::class,'uploadImage'])->name('goods.upload.image');
 Route::resource('goods', GoodsController::class);
+
+//货币

@@ -104,7 +104,7 @@
             <div class="form-item">
                 <label class="label"></label>
                 <div class="field">
-                    <a href="{{ route('admin.user.index') }}" class="btn btn-warning btn-sm">
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-warning btn-sm">
                         <span class="glyphicon glyphicon-arrow-left"></span> 返回列表
                     </a>
                 </div>

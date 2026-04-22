@@ -1,13 +1,10 @@
 <?php
 
 namespace App\Services\Admin;
-//use App\Services\Admin\SupplierService;
-// 你以后的其他 Service 都可以加进来
-
-use App\Services\Admin\Goods\GoodsCategoryService;
+use App\Services\Admin\Goods\CurrencyService;
 use App\Services\Admin\Goods\GoodsComponentService;
 use App\Services\Admin\Goods\GoodsSeasonService;
-
+use App\Services\Admin\Goods\GoodsCategoryService;
 class ViewDataService
 {
     /**
@@ -25,6 +22,8 @@ class ViewDataService
             '_goods_categories' => $this->getGoodsCategories(),
             '_goods_seasons' => $this->getGoodsSeasons(),
             '_goods_components' => $this->getGoodsComponents(),
+            '_warehouses'    => $this->getWarehouses(),
+            '_currencies'    => $this->getCurrencies(),
         ];
     }
 
@@ -74,4 +73,16 @@ class ViewDataService
     {
         return app(GoodsComponentService::class)->getCacheAll();
     }
+
+    //仓库列表
+    public function getWarehouses()
+    {
+        return app(WarehouseService::class)->getCacheAll();
+    }
+
+    public function getCurrencies()
+    {
+        return app(CurrencyService::class)->getCacheAll();
+    }
+
 }

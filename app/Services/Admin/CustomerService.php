@@ -2,6 +2,7 @@
 namespace App\Services\Admin;
 use App\Models\Customer;
 use App\Models\Department;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class CustomerService extends BaseService{
@@ -39,5 +40,12 @@ class CustomerService extends BaseService{
             ->with('department','clearance','payment','creator','updater')
             ->orderBy('sort', 'asc')
             ->get();
+    }
+
+    public function getCustomerByDepartmentId(int $departmentId): Collection
+    {
+        $data = $this->getCacheAll();
+        $data = $departmentId?$data->where('department_id',$departmentId)->values():collect();
+        return $data;
     }
 }

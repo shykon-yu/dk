@@ -22,6 +22,11 @@ class Department extends Base
         return $this->hasMany(Customer::class);
     }
 
+    public function Warehouses()
+    {
+        return $this->hasMany(Warehouse::class);
+    }
+
     public function goods()
     {
         return $this->hasMany(Goods::class);

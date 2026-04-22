@@ -12,7 +12,6 @@ class Clearance extends Base
     use HasFactory ,SoftDeletes , FormatTimeTrait;
     protected $fillable = ['name'];
     protected $dates = ['deleted_at'];
-
     public function customers()
     {
         return $this->hasMany(Customer::class);

@@ -2,6 +2,7 @@
 namespace App\Services\Admin\Goods;
 use App\Models\GoodsCategory;
 use App\Services\Admin\BaseService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class GoodsCategoryService extends BaseService{
@@ -12,7 +13,7 @@ class GoodsCategoryService extends BaseService{
     }
 
     /**
-     * 所有商品季节
+     * 所有商品分类，一级二级树形结构
      */
     public function getCacheAll()
     {
@@ -24,6 +25,14 @@ class GoodsCategoryService extends BaseService{
                 ->orderBy('id', 'desc')
                 ->get();
         });
+    }
+
+    public function getChildrenByParentId(int $parent_id): Collection
+    {
+        $data = $this->getCacheAll();
+        $parent = $data->firstWhere('id', $parent_id);
+        $children = $parent?$parent->children:collect();
+        return $children;
     }
 
     public function getGoodsCategoriesList($params)

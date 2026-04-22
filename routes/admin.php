@@ -24,6 +24,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         require __DIR__ . '/admin/users.php';
         require __DIR__ . '/admin/goods.php';
+        require __DIR__ . '/admin/common.php';
     });
 
 });

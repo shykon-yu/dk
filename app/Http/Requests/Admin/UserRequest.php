@@ -10,8 +10,8 @@ class UserRequest extends BaseRequest
         $sensitiveWords = ['admin', 'root', 'test']; // 敏感词列表
         return [
             'id' => ['nullable', 'integer', 'exists:users,id'],
-            'username' => ['required', 'string', 'unique:users,username,'.$this->input('id') ,
-                'between:3,100' , 'regex:/^[\x{4e00}-\x{9fa5}A-Za-z0-9\-\_]+$/u',
+            'username' => ['required', 'string', 'unique:users,username,'.$this->id,
+                'between:3,100' , 'regex:/^[\x{4e00}-\x{9fa5}\x{AC00}-\x{D7AF}A-Za-z0-9\-\_]+$/u',
                 function ($attribute, $value, $fail) use ($sensitiveWords) {
                     if($this->id == 1){return;}
                     foreach ($sensitiveWords as $word) {
@@ -21,7 +21,7 @@ class UserRequest extends BaseRequest
                     }
                 }],
             'name' => ['required', 'string',],
-            'password' => $this->input('id')
+            'password' => $this->id
                 ? ['nullable', 'string', 'min:6']
                 : ['required', 'string', 'min:6'],
             'email' => ['required', 'email','unique:users,email,'.$this->id],

@@ -66,6 +66,9 @@
 </html>
 @yield('script')
 <script>
+    $(function(){
+        $('[data-toggle="tooltip"]').tooltip();
+    })
     let rotate = 0; // 旋转角度
     let scale = 1;  // 缩放比例
     let isDrag = false; // 是否拖动

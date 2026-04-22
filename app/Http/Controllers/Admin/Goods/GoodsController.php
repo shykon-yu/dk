@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Admin\Goods;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\GoodsRequest;
+use App\Models\Goods;
+use App\Services\Admin\CustomerService;
+use App\Services\Admin\Goods\GoodsCategoryService;
 use App\Services\Admin\Goods\GoodsService;
+use App\Services\Admin\WarehouseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class GoodsController extends Controller
 {
@@ -17,23 +23,19 @@ class GoodsController extends Controller
 
     public function index(Request $request)
     {
-        $params = $request->only('name','page');
-        $list = $this->goodsService->getGoodsList($params);
+        $list = $this->goodsService->getGoodsList($request->all());
         return view('admin.goods.index', compact('list'));
     }
 
     public function create()
     {
-        $parentCategories = $this->goodsCategoryService->getTopLevel();
-        return view('admin.goods.category.create', compact('parentCategories'));
+        return view('admin.goods.create');
     }
 
-    public function store(GoodsCategoryRequest $request )
+    public function store(GoodsRequest $request )
     {
-        $level = $request->input('parent_id')==0?1:2;
-        $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
         try{
-            $this->goodsCategoryService->store($data);
+            $this->goodsService->store($request->all());
             return response()->json([
                 'code' => 200,
                 'msg' => '新增成功',
@@ -45,18 +47,18 @@ class GoodsController extends Controller
             ]);
         }
     }
-    public function edit(GoodsCategory $category)
+    public function edit(Goods $good)
     {
-        $parentCategories = $this->goodsCategoryService->getTopLevel();
-        return view('admin.goods.category.edit', compact('category', 'parentCategories'));
+        $warehouses = app(WarehouseService::class)->getWarehouseByDepartmentId($good->department_id);
+        $customers = app(CustomerService::class)->getCustomerByDepartmentId($good->department_id);
+        $categoryChildren = app(GoodsCategoryService::class)->getChildrenByParentId($good->category->parent_id);
+        return view('admin.goods.edit', compact('good','customers','warehouses','categoryChildren'));
     }
 
-    public function update(GoodsCategoryRequest $request, GoodsCategory $category)
+    public function update(GoodsRequest $request, Goods $good)
     {
-        $level = $request->input('parent_id')==0?1:2;
-        $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
         try{
-            $this->goodsCategoryService->update($category,$data);
+            $this->goodsService->update($good,$request->all());
             return response()->json([
                 'code' => 200,
                 'msg' => '修改成功'
@@ -69,10 +71,10 @@ class GoodsController extends Controller
         }
     }
 
-    public function destroy(GoodsCategory $category)
+    public function destroy(Goods $good)
     {
         try{
-            $this->goodsCategoryService->destroy($category);
+            $this->goodsService->destroy($good);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功',
@@ -95,7 +97,7 @@ class GoodsController extends Controller
             ]);
         }
         try{
-            $this->goodsCategoryService->batchDestroy($ids);
+            $this->goodsService->batchDestroy($ids);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功'
@@ -122,6 +124,30 @@ class GoodsController extends Controller
             return response()->json([
                 'code'=>500,
                 'msg'=>$e->getMessage(),
+            ]);
+        }
+    }
+
+    public function uploadImage(Request $request)
+    {
+        try {
+            $file = $request->file('file');
+            // 调用基类的上传方法，指定模块为goods
+            $uploadResult = $this->goodsService->uploadImage($file, 'goods');
+
+            return response()->json([
+                'code' => 200,
+                'msg' => '上传成功',
+                'data' => [
+                    'id' => $uploadResult['id'],
+                    'url' => $uploadResult['main_url'],
+                    'thumb_url' => $uploadResult['thumb_url']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'msg' => $e->getMessage()
             ]);
         }
     }

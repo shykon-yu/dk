@@ -12,7 +12,6 @@ class ClearanceService extends BaseService{
 
     public function getCacheAll()
     {
-        $this->clearCache();
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return Clearance::where('status' , 1)
                 ->orderBy('sort' , 'asc')

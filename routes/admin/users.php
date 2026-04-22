@@ -6,9 +6,11 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\WarehouseController;
 
 //用户管理
 Route::delete('users/batch', [UserController::class, 'batchDestroy'])->name('users.batch.destroy');
+Route::post('users/status/{user}',[UserController::class,'status'])->name('users.status');
 Route::resource('users', UserController::class); // 自动生成 index/create/store/show/edit/update/destroy
 
 //角色管理
@@ -23,11 +25,18 @@ Route::resource('menus',MenuController::class);
 Route::delete('customers/batch', [CustomerController::class, 'batchDestroy'])->name('customers.batch.destroy');
 Route::post('goods/customers/status/{customer}',[CustomerController::class,'status'])->name('customers.status');
 Route::resource('customers',CustomerController::class);
+
 //供应商管理
 Route::delete('suppliers/batch', [SupplierController::class, 'batchDestroy'])->name('suppliers.batch.destroy');
 Route::post('goods/suppliers/status/{supplier}',[SupplierController::class,'status'])->name('suppliers.status');
 Route::resource('suppliers',SupplierController::class);
+
 //部门管理
 Route::delete('departments/batch', [DepartmentController::class, 'batchDestroy'])->name('departments.batch.destroy');
 Route::post('goods/departments/status/{department}',[DepartmentController::class,'status'])->name('departments.status');
 Route::resource('departments',DepartmentController::class);
+
+//仓库管理
+Route::delete('warehouses/batch', [WarehouseController::class, 'batchDestroy'])->name('warehouses.batch.destroy');
+Route::post('goods/warehouses/status/{warehouse}',[WarehouseController::class,'status'])->name('warehouses.status');
+Route::resource('warehouses',WarehouseController::class);

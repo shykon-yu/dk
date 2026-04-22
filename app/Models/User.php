@@ -15,16 +15,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable , HasRoles , SoftDeletes;
     protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-        'department_id',
-        'phone_number',
-        'status',
-        'section_id',
-        'role_id',
-        'open_id'
+        'name', 'username', 'email', 'password', 'phone_number', 'status', 'section_id', 'open_id'
     ];
 
     protected $dates = ['deleted_at'];
@@ -38,6 +29,13 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    public function getDepartmentsNameAttribute()
+    {
+        return $this->departments->map(function($item){
+            return $item->name;
+        })->implode(',');
+    }
+
     protected static function booted()
     {
         static::addGlobalScope(new ActiveScope());
@@ -45,7 +43,7 @@ class User extends Authenticatable
 
     public function departments()
     {
-        return $this->belongsToMany(Department::class, 'user_department', 'user_id', 'department_id');
+        return $this->belongsToMany(Department::class, 'user_department');
     }
 
     public function getDeptIdArray()

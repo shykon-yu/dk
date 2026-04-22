@@ -62,7 +62,7 @@
                     </div>
                 </div>
 
-                <!-- 密码：不填则不修改，提示文案明确 -->
+                <!-- 密码：不填则不修改 -->
                 <div class="form-item">
                     <label class="label">密码：</label>
                     <div class="field">
@@ -98,7 +98,7 @@
                     </div>
                 </div>
 
-                <!-- 角色选择：自动选中用户当前角色 -->
+                <!-- 角色选择 -->
                 <div class="form-item">
                     <label class="label">分配角色：</label>
                     <div class="field">
@@ -107,6 +107,30 @@
                             @foreach($roles as $role)
                                 <option value="{{ $role->id }}" {{ $user->roles->first()?->id == $role->id ? 'selected' : '' }}>
                                     {{ $role->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 部门选择 -->
+                <div class="form-item">
+                    <label class="label">部门选择：</label>
+                    <div class="field">
+                        <select name="department_id[]"  class="selectpicker"
+                                data-live-search="true"
+                                multiple
+                                data-live-search-placeholder="Search"
+                                data-actions-box="true"
+                                title="请选择部门">
+
+                            @foreach($_departments as $dpat)
+                                {{-- 关键：判断当前用户是否已拥有该部门，有就加 selected --}}
+                                <option
+                                    value="{{$dpat->id}}"
+                                    {{ $user->departments->contains('id', $dpat->id) ? 'selected' : '' }}
+                                >
+                                    {{$dpat->name}}
                                 </option>
                             @endforeach
                         </select>

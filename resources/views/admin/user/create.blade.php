@@ -110,6 +110,25 @@
                     </div>
                 </div>
 
+                <!-- 部门选择 -->
+                <div class="form-item">
+                    <label class="label">部门选择：</label>
+                    <div class="field">
+                        <select name="department_id[]"  class="selectpicker"
+                                data-live-search="true"
+                                multiple
+                                data-live-search-placeholder="Search"
+                                data-actions-box="true"
+                                title="请选择部门">
+                            @foreach($_departments as $dpat)
+                                <option value="{{$dpat->id}}">
+                                    {{$dpat->name}}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
                 <!-- 按钮 -->
                 <div class="form-item">
                     <label class="label"></label>

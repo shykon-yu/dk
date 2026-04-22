@@ -15,6 +15,6 @@ class GoodsComponent extends Base
 
     public function goods()
     {
-        return $this->hasMany(Goods::class);
+        return $this->belongsToMany(Goods::class,'goods_goods_component')->withPivot('percent');
     }
 }

@@ -103,13 +103,14 @@
                     <th>序号</th>
                     <th>图片</th>
                     <th>商品名称</th>
-                    <th>客户SKU</th>
+                    <th>货号</th>
                     <th>部门</th>
                     <th>客户</th>
                     <th>供应商</th>
-                    <th>品牌LOGO</th>
+                    <th>品牌</th>
                     <th>分类</th>
                     <th>季节</th>
+                    <th>成分</th>
                     <th>状态</th>
                     <th>星标</th>
                     <th>排序</th>
@@ -148,8 +149,25 @@
                         <td>{{ $vo->customer->name ?? '-' }}</td>
                         <td>{{ $vo->supplier->name ?? '-' }}</td>
                         <td>{{ $vo->brand_logo ?? '-' }}</td>
-                        <td>{{ $vo->category->name ?? '-' }}</td>
+                        <td>
+                            <div data-toggle="tooltip"
+                                 data-placement="top"
+                                 data-container="body"
+                                 title="{{ $vo->category->name ?? '-' }}"
+                                 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; display: inline-block;">
+                                {{ Str::limit($vo->category->name ?? '-', 15) }}
+                            </div>
+                        </td>
                         <td>{{ $vo->season->name ?? '-' }}</td>
+                        <td>
+                            <div data-toggle="tooltip"
+                                 data-placement="top"
+                                 data-container="body"
+                                 title="{{ $vo->component_kr_text ?? '-' }}" style="white-space: nowrap;overflow-x: auto;max-width: 150px;
+                                    display: inline-block;vertical-align: middle;padding: 2px 0;-ms-overflow-style: none;scrollbar-width: none;">
+                                {{ $vo->component_kr_text ?? '-' }}
+                            </div>
+                        </td>
                         <td class="change-status" style="cursor:pointer" data-id="{{ $vo->id }}" data-status="{{ $vo->status }}">
                             @if($vo->status)
                                 <span class="label label-success">启用</span>
@@ -175,7 +193,7 @@
                             </div>
                         </td>
                         <td>{{ $vo->creator->name ?? '系统' }}</td>
-                        <td>{{ $vo->created_at }}</td>
+                        <td>{{ $vo->created_at_date }}</td>
                         <td>
                             <a href="{{ route('admin.goods.edit', $vo) }}" class="text-info m-r-1">
                                 <span class="glyphicon glyphicon-edit"></span> 编辑
@@ -216,14 +234,16 @@
         }
 
         $(function () {
-            $('[data-toggle="tooltip"]').tooltip();
             $('.selectpicker').selectpicker();
 
-            // 重置
-            $('#R').click(function () {
-                $('#search')[0].reset();
-                $('.selectpicker').selectpicker('refresh');
-                setTimeout(() => $('#T').click(), 100);
+            $('#R').click(function (e) {
+                e.preventDefault(); // 阻止默认重置提交
+                $('#search input[type="text"]').val('');
+                $('.selectpicker').each(function () {
+                    $(this).selectpicker('deselectAll'); // 取消所有选中
+                    $(this).selectpicker('refresh');     // 刷新显示
+                });
+                window.location.href = "{{ route('admin.goods.index') }}";
             });
 
             // 删除

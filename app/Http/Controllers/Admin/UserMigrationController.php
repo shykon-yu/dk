@@ -15,9 +15,89 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateimage();
+        $this->migratePer();
     }
 
+    public function migratePer(){
+        $oldData = DB::table('permissions')->get();
+        $data = [];
+        foreach ($oldData as $value) {
+            if (str_contains($value->name, 'index')) {
+                $array = explode('.', $value->name);
+                if( isset($data[$value->id]) ){
+                    $mergeData = [
+                        'name' => $value->name,
+                    ];
+                }else{
+                    $data[$value->id] = [
+
+                    ];
+                }
+            }
+        }
+        dd($oldData);
+    }
+    public function migrateStock(){
+        $oldData = DB::table('dk_inventory')->get();
+        $data = [];
+        foreach ($oldData as $item){
+            $color = DB::table('skus')->where('id',$item->products_color_id)->get();
+            if($color->isEmpty()){
+               continue;
+            }
+            $data[]=[
+                'goods_id'=>$item->products_id,
+                'warehouse_id'=>$item->warehouse_id,
+                'sku_id'=>$item->products_color_id,
+                'stock'=>$item->number,
+                'lock_stock'=>0,
+                'available_stock'=>$item->number,
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ];
+        }
+        DB::table('goods_sku_stocks')->insert($data);
+    }
+    public function migrateWarehouse(){
+        $oldData = DB::table('dk_warehouse')->get();
+        $data = [];
+        foreach ($oldData as $item){
+            $data[] = [
+                'id' => $item->id,
+                'department_id' => $item->department_id,
+                'name' => $item->warehouse_name,
+                'status'=>1,
+                'sort'=>0,
+                'created_at'=>now(),
+                'updated_at'=>now(),
+            ];
+        }
+        DB::table('warehouses')->insert($data);
+    }
+    public function migrateComponent(){
+        $oldData = DB::table('goods')->get();
+        $componentArray = [];
+        foreach ($oldData as $item){
+            $component = DB::table('dk_products_ingredients')->where('id',$item->old_component_id)->first();
+            if(!$component){
+                continue;
+            }
+            $cn_arr = preg_split('/\s+/', $component->ingredients_cn_name);
+            $total = count($cn_arr);
+            for($i = 0; $i < $total; $i=$i+2){
+                $component_data = DB::table('goods_components')->where('name',$cn_arr[$i])->first();
+                if(!$component_data){
+                    continue;
+                }
+                $componentArray[] = [
+                    'goods_id'=>$item->id,
+                    'goods_component_id'=>$component_data->id,
+                    'percent' => substr($cn_arr[$i+1],0,-1),
+                ];
+            }
+        }
+        DB::table('goods_goods_component')->insert($componentArray);
+    }
     public function migrateimage(){
         $oldData = DB::table('dk_products_color')->whereNotNull('item_no')->get();
         $data = [];

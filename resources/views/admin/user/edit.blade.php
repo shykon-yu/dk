@@ -88,7 +88,7 @@
                                class="form-control input-sm w50">
                     </div>
                 </div>
-
+                @can('admin.user.update')
                 <!-- OpenID -->
                 <div class="form-item">
                     <label class="label">OpenID：</label>
@@ -136,7 +136,7 @@
                         </select>
                     </div>
                 </div>
-
+                @endcan
                 <!-- 按钮 -->
                 <div class="form-item">
                     <label class="label"></label>

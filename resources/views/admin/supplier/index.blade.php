@@ -60,11 +60,15 @@
                         </td>
                         <td>{{ $vo->sort }}</td>
                         <td class="change-status" style="cursor: pointer;" data-id="{{ $vo->id }}" data-status="{{ $vo->status }}">
+                            @can('admin.suppliers.update')
+                                @can('update',$vo)
                             @if($vo->status == 1)
                                 <span class="label label-success">启用</span>
                             @else
                                 <span class="label label-default">禁用</span>
                             @endif
+                                @endcan
+                            @endcan
                         </td>
                         <td>
                         <div data-toggle="tooltip"
@@ -78,12 +82,20 @@
                         <td>{{ $vo->creator->name ?? '系统' }}</td>
                         <td>{{ $vo->created_at_date }}</td>
                         <td>
-                            <a href="{{ route('admin.suppliers.edit', $vo) }}" class="text-info m-r-1">
-                                <span class="glyphicon glyphicon-edit"></span> 编辑
-                            </a>
-                            <a href="javascript:;" class="delete del_supplier" data-id="{{ $vo->id }}">
-                                <span class="glyphicon glyphicon-remove"></span> 删除
-                            </a>
+                            @can('admin.suppliers.update')
+                                @can('update',$vo)
+                                <a href="{{ route('admin.suppliers.edit', $vo) }}" class="text-info m-r-1">
+                                    <span class="glyphicon glyphicon-edit"></span> 编辑
+                                </a>
+                                @endcan
+                            @endcan
+                            @can('admin.suppliers.destroy')
+                                @can('delete',$vo)
+                                <a href="javascript:;" class="delete del_supplier" data-id="{{ $vo->id }}">
+                                    <span class="glyphicon glyphicon-remove"></span> 删除
+                                </a>
+                                @endcan
+                            @endcan
                         </td>
                     </tr>
                 @endforeach
@@ -96,7 +108,9 @@
                 </tr>
                 <tr>
                     <td colspan="18">
+                        @can('admin.suppliers.destroy')
                         <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
+                        @endcan
                     </td>
                 </tr>
                 </tfoot>

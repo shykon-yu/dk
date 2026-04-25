@@ -8,35 +8,17 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class UserPolicy
 {
     use HandlesAuthorization;
-
-    public function before($user, $ability)
-    {
-//        if ($user->id === 1) {
-//            return true;
-//        }
-    }
-    public function viewAny(User $user)
-    {
-        //
-    }
-
-
-    public function view(User $user, User $model)
-    {
-        //
-    }
-
-
-    public function create(User $user)
-    {
-        //
-    }
-
     public function update(User $user, User $model)
     {
-        //
+        $currentLevel = $user->roles->sortBy('level')->first()?->level ?? 999;
+        if( $user->id == 1 || $currentLevel <=1 ){
+            return true;
+        }
+        if( $user->id != $model->id ){
+            return false;
+        }
+        return true;
     }
-
 
     public function delete(User $user, User $model)
     {
@@ -47,17 +29,5 @@ class UserPolicy
             return false;
         }
         return true;
-    }
-
-
-    public function restore(User $user, User $model)
-    {
-        //
-    }
-
-
-    public function forceDelete(User $user, User $model)
-    {
-        //
     }
 }

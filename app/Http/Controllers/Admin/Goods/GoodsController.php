@@ -17,6 +17,10 @@ class GoodsController extends Controller
     protected $goodsService;
     public function __construct(GoodsService $goodsService)
     {
+        $this->middleware('permission:admin.goods.index')->only('index');
+        $this->middleware('permission:admin.goods.store')->only('create', 'store');
+        $this->middleware('permission:admin.goods.update')->only('edit', 'update','status','star');
+        $this->middleware('permission:admin.goods.destroy')->only('destroy','batchDestroy');
         $this->goodsService = $goodsService;
 
     }
@@ -110,14 +114,33 @@ class GoodsController extends Controller
         }
     }
 
-    public function status(Request $request , GoodsCategory $category)
+    public function status(Request $request , Goods $good)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
         try{
-            $category = $this->goodsCategoryService->changeStatus($category, $request->status);
+            $good = $this->goodsService->changeStatus($good, $request->status);
             return response()->json([
                 'code'=>200,
-                'status'=>$category->status,
+                'status'=>$good->status,
+                'msg' => '状态修改成功',
+            ]);
+        }catch (\Exception $e){
+            return response()->json([
+                'code'=>500,
+                'msg'=>$e->getMessage(),
+            ]);
+        }
+    }
+
+    public function star(Request $request , Goods $good)
+    {
+//        dd($request->all());
+        $request->validate(['star'=>['required','integer','between:0,1']]);
+        try{
+            $good = $this->goodsService->changeStar($good, $request->star);
+            return response()->json([
+                'code'=>200,
+                'star'=>$good->is_star,
                 'msg' => '状态修改成功',
             ]);
         }catch (\Exception $e){

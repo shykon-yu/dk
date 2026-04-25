@@ -7,7 +7,7 @@ class ClearanceService extends BaseService{
     public function __construct()
     {
         $this->modelClass = Clearance::class;
-        $this->cacheKey = 'goods_clearance_all';
+        $this->cacheKey = 'clearance_all';
     }
 
     public function getCacheAll()
@@ -19,15 +19,14 @@ class ClearanceService extends BaseService{
         });
     }
 
-    public function getClearanceList($params)
+    public function getClearancesList($params)
     {
-        $data = $this->getAllWithoutTrashed();
-
-        if (!empty($params['name'])) {
-            $data = $data->filter(function ($item) use ($params) {
-                return str_contains($item->name, $params['name']);
-            });
-        }
+        $data = $this->modelClass::query()
+            ->when(!empty($params['name']), function ($query) use ($params) {
+                $query->where('name', 'like', '%'.trim($params['name']).'%');
+            })
+            ->orderBy('sort', 'asc')
+            ->get();
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
 }

@@ -5,37 +5,33 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
+use App\Services\Admin\DepartmentService;
 use App\Services\Admin\RoleService;
 use App\Services\Admin\UserService;
 use Illuminate\Http\Request;
 use App\Http\Requests\Admin\UserRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     protected $userService;
     public function __construct(UserService $userService)
     {
-        $this->middleware('can:admin.user.index')->only('index');
-        $this->middleware('can:admin.user.store')->only('create', 'store');
-        $this->middleware('can:admin.user.update')->only('edit', 'update','status');
-        $this->middleware('can:admin.user.destroy')->only('destroy','batchDestroy');
+        $this->middleware('permission:admin.users.index')->only('index','show');
+        $this->middleware('permission:admin.users.store')->only('create', 'store');
+        $this->middleware('permission:admin.users.update')->only('status');
+        $this->middleware('permission:admin.users.destroy')->only('destroy','batchDestroy');
+        $this->middleware('permission:admin.users.reset')->only('edit', 'update');
         $this->userService = $userService;
     }
-    /**
-     * 用户列表页
-     */
+
     public function index(Request $request)
     {
         $user_list = $this->userService->getUsersList($request->all());
         return view('admin.user.index', compact('user_list'));
     }
 
-    /**
-     * 新增页面
-     */
     public function create()
     {
         $roles = app(RoleService::class)->getCacheAll();
@@ -58,11 +54,9 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * 编辑页面
-     */
     public function edit(User $user)
     {
+        $this->authorize('update', $user);
         $roles = Role::all(); // 获取所有角色供选择
         return view('admin.user.edit', compact('user', 'roles'));
     }
@@ -70,6 +64,7 @@ class UserController extends Controller
     // 提交更新用户
     public function update(UserRequest $request , User $user)
     {
+        $this->authorize('update', $user);
         try {
             $this->userService->update($user , $request->all());
 
@@ -80,9 +75,7 @@ class UserController extends Controller
             return response()->json(['code' => 500, 'msg' => '编辑失败：' . $e->getMessage()]);
         }
     }
-    /**
-     * 详情页面
-     */
+
     public function show(User $user)
     {
         return view('admin.user.show', compact('user'));

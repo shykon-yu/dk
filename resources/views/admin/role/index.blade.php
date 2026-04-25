@@ -12,46 +12,52 @@
                 <input type="text" name="name" placeholder="角色名称" class="form-control input-sm" value="{{ request('name') }}">
                 <input type="submit" class="btn btn-info btn-sm" value="搜索" id="T">
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
-
+                @can('admin.role.store')
                 <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm pull-right">
                     <span class="glyphicon glyphicon-plus"></span> 新增角色
                 </a>
+                @endcan
             </form>
 
             <!-- 表格 -->
             <table class="table table-bordered table-hover table-striped" id="log_form">
                 <thead>
                 <tr>
-                    @foreach($headers as $h)
-                        <th>
-                            @if($h['field'] == 'check')
-                                <input id="all" name="all" type="checkbox" onclick="checkAll()" />
-                            @else
-                                {{ $h['name'] }}
-                            @endif
-                        </th>
-                    @endforeach
+                    <th><input id="all" name="all" type="checkbox" onclick="checkAll()"></th>
+                    <th>序号</th>
+                    <th>角色名称</th>
+                    <th>权限数量</th>
+                    <th>角色层级</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
                 </tr>
                 </thead>
                 <tbody id="role_list">
-                @foreach($roles as $item)
+                @foreach($roles as $key => $item)
                     <tr class="text-center">
                         <td><input type='checkbox' name='one[]' value="{{ $item['id'] }}"></td>
-                        <td>{{ $item['id'] }}</td>
+                        <td>{{ $key + 1 }}</td>
                         <td style="text-align:left; padding-left:10px;">{{ $item['name'] }}</td>
                         <td>{{ $item->permissions->count() }} 个权限</td>
+                        <td>{{ $item->level  }}</td>
                         <td>{{ $item['created_at_date'] }}</td>
                         <td>
-                            <a class="text-info m-r-1 edit_order" href="{{ route('admin.roles.edit', $item) }}">
-                                <span class="glyphicon glyphicon-edit"></span> 编辑
-                            </a>
-
-                            @if($item->name !== 'super-admin')
-                                <a href="javascript:;" class="delete del_role" data-id="{{ $item->id }}">
-                                    <span class="glyphicon glyphicon-remove"></span> 删除
+                            @can('admin.roles.update')
+                                @can('update',$item)
+                                <a class="text-info m-r-1 edit_order" href="{{ route('admin.roles.edit', $item) }}">
+                                    <span class="glyphicon glyphicon-edit"></span> 编辑
                                 </a>
-                            @else
-                                <span class="text-muted" style="color:#999;">系统管理员</span>
+                                @endcan
+                            @endcan
+                            @if($item->name != "管理员")
+                            @can('admin.roles.destroy')
+                                @can('delete',$item)
+                                        <a href="javascript:;" class="delete del_role" data-id="{{ $item->id }}">
+                                            <span class="glyphicon glyphicon-remove"></span> 删除
+                                        </a>
+                                @endcan
+
+                            @endcan
                             @endif
                         </td>
                     </tr>
@@ -61,7 +67,9 @@
 
             <!-- 批量删除 -->
             <div style="margin-top:15px; text-align:left;">
+                @can('admin.roles.destroy')
                 <input type="button" class="btn btn-danger btn-sm" value="批量删除" onclick="Alldel()">
+                @endcan
             </div>
 
         </div>

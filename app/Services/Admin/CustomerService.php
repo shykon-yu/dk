@@ -9,7 +9,7 @@ class CustomerService extends BaseService{
     public function __construct()
     {
         $this->modelClass = Customer::class;
-        $this->cacheKey = 'goods_customer_all';
+        $this->cacheKey = 'customer_all';
     }
 
     public function getCacheAll()
@@ -24,22 +24,17 @@ class CustomerService extends BaseService{
 
     public function getCustomersList($params)
     {
-        $data = $this->getAllWithoutTrashed();
-        if (!empty($params['name'])) {
-            $data = $data->filter(function ($item) use ($params) {
-                return str_contains($item->name, $params['name']);
-            });
-        }
-        return $this->paginateCacheData($data, $params,$this->getPerPage());
-    }
-
-    //覆盖父方法，解决N+1
-    public function getAllWithoutTrashed()
-    {
-        return $this->modelClass::query()
+        $data = $this->modelClass::query()
+            ->when(!empty($params['name']), function ($query) use ($params) {
+                $query->where('name', 'like', '%'.trim($params['name']).'%');
+            })
+            ->when(!empty($params['department_ids']), function ($query) use ($params) {
+                $query->whereIn('department_id', $params['department_ids']);
+            })
             ->with('department','clearance','payment','creator','updater')
             ->orderBy('sort', 'asc')
             ->get();
+        return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
 
     public function getCustomerByDepartmentId(int $departmentId): Collection

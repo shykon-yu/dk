@@ -15,7 +15,34 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migratePer();
+        $this->migrateComponent2();
+    }
+
+    public function migrateComponent2()
+    {
+        $goods = Goods::query()->whereHas('components', function ($query) {
+           $query->where('goods_component_id',12);
+        })
+            ->with('components')
+            ->get()->toArray();
+        //dd($goods);
+        $data = [];
+        foreach( $goods as $good ){
+            $data[$good['id']] = [];
+            foreach( $good['components'] as $component ){
+                if( $component['id'] == 12 ){
+                    $component_id = 14;
+                }else{
+                    $component_id = $component['id'];
+                }
+                $data[$good['id']][$component_id] = ['percent' => $component['pivot']['percent']];
+            }
+        }
+//        dd($data);
+        foreach( $data as $goodsId => $components ){
+            $goods = Goods::query()->find($goodsId);
+            $goods->components()->sync($components);
+        }
     }
 
     public function migratePer(){

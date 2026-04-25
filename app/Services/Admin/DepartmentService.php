@@ -2,12 +2,13 @@
 namespace App\Services\Admin;
 use App\Models\Department;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentService extends BaseService{
     public function __construct()
     {
         $this->modelClass = Department::class;
-        $this->cacheKey = 'goods_department_all';
+        $this->cacheKey = 'department_all';
     }
 
     public function getCacheAll()
@@ -27,5 +28,4 @@ class DepartmentService extends BaseService{
         }
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
-
 }

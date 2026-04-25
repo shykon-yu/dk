@@ -13,6 +13,10 @@ class WarehouseController extends Controller
     protected $warehouseService;
     public function __construct(WarehouseService $warehouseService)
     {
+        $this->middleware('permission:admin.warehouses.index')->only('index');
+        $this->middleware('permission:admin.warehouses.store')->only('create', 'store');
+        $this->middleware('permission:admin.warehouses.update')->only('edit', 'update','status');
+        $this->middleware('permission:admin.warehouses.destroy')->only('destroy','batchDestroy');
         $this->warehouseService = $warehouseService;
 
     }

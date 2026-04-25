@@ -23,8 +23,8 @@ Route::resource('goods/components', GoodsComponentController::class)->names('goo
 
 //商品
 Route::delete('goods/batch',[GoodsController::class,'batchDestroy'])->name('goods.batch.destroy');
-Route::post('goods/status/{goods}',[GoodsController::class,'status'])->name('goods.status');
-Route::post('goods/star/{goods}',[GoodsController::class,'star'])->name('goods.star');
+Route::post('goods/status/{good}',[GoodsController::class,'status'])->name('goods.status');
+Route::post('goods/star/{good}',[GoodsController::class,'star'])->name('goods.star');
 Route::post('goods/upload/image',[GoodsController::class,'uploadImage'])->name('goods.upload.image');
 Route::resource('goods', GoodsController::class);
 

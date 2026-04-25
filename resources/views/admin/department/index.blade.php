@@ -15,10 +15,12 @@
                 <button type="button" class="btn btn-info btn-sm" id="T">搜索</button>
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
 
-                <!-- 新增按钮 -->
-                <a href="{{ route('admin.departments.create') }}" class="btn btn-primary btn-sm pull-right">
-                    <span class="glyphicon glyphicon-plus"></span> 新增部门
-                </a>
+                @can('admin.departments.store')
+                    <a href="{{ route('admin.departments.create') }}" class="btn btn-primary btn-sm pull-right">
+                        <span class="glyphicon glyphicon-plus"></span> 新增部门
+                    </a>
+                @endcan
+
             </form>
 
             <!-- 表格 -->
@@ -48,12 +50,16 @@
                         </td>
                         <td>{{ $vo->created_at_date }}</td>
                         <td>
-                            <a href="{{ route('admin.departments.edit', $vo) }}" class="text-info m-r-1">
-                                <span class="glyphicon glyphicon-edit"></span> 编辑
-                            </a>
-                            <a href="javascript:;" class="delete del_department" data-id="{{ $vo->id }}">
-                                <span class="glyphicon glyphicon-remove"></span> 删除
-                            </a>
+                            @can('admin.departments.update')
+                                <a href="{{ route('admin.departments.edit', $vo) }}" class="text-info m-r-1">
+                                    <span class="glyphicon glyphicon-edit"></span> 编辑
+                                </a>
+                            @endcan
+                            @can('admin.departments.destroy')
+                                <a href="javascript:;" class="delete del_department" data-id="{{ $vo->id }}">
+                                    <span class="glyphicon glyphicon-remove"></span> 删除
+                                </a>
+                            @endcan
                         </td>
                     </tr>
                 @endforeach
@@ -66,7 +72,9 @@
                 </tr>
                 <tr>
                     <td colspan="6">
+                        @can('admin.departments.destroy')
                         <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
+                        @endcan
                     </td>
                 </tr>
                 </tfoot>

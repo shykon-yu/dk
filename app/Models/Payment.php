@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Base
 {
-    use HasFactory , SoftDeletes , FormatTimeTrait;
-    protected $fillable = ['name'];
+    use SoftDeletes , FormatTimeTrait;
+    protected $fillable = ['name','name_kr','sort','status'];
     protected $dates = ['deleted_at'];
     public function customers()
     {

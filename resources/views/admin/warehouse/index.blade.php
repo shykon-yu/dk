@@ -76,13 +76,11 @@
                         {{ $list->appends(request()->all())->links('pagination::bootstrap-4') }}
                     </td>
                 </tr>
-                <tr>
-                    <td colspan="7">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
-                    </td>
-                </tr>
                 </tfoot>
             </table>
+            <div style="margin-top:15px; text-align:left;">
+                <input type="button" class="btn btn-danger btn-sm" value="批量删除" onclick="Alldel()">
+            </div>
         </div>
     </div>
 @endsection

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\Goods;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class GoodsService extends BaseService{
     // 可选：重写上传配置（比如商品图片限制10MB）
@@ -73,6 +74,11 @@ class GoodsService extends BaseService{
             ->when(!empty($params['season_ids']), function ($q) use ($params) {
                 $q->whereIn('goods.season_id', $params['season_ids']);
             })
+            ->when(!empty($params['component_ids']), function ($q) use ($params) {
+                $q->whereHas('components', function ($qq) use ($params) {
+                   $qq->whereIn('id', $params['component_ids']);
+                });
+            })
             ->when(!empty($params['status']), function ($q) use ($params) {
                 $q->whereIn('goods.status', $params['status']);
             })
@@ -83,7 +89,7 @@ class GoodsService extends BaseService{
             ->orderBy('gs.year', 'desc')
             ->orderBy('gs.season', 'desc')
             ->orderBy('goods.status', 'desc')
-            ->orderBy('goods.sort', 'asc')
+//            ->orderBy('goods.sort', 'asc')
             ->with([
                 'customer:id,name',
                 'department:id,name',

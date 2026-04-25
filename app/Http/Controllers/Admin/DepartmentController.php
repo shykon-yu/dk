@@ -10,9 +10,14 @@ use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
+
     protected $departmentService;
     public function __construct(DepartmentService $departmentService)
     {
+        $this->middleware('permission:admin.departments.index')->only('index');
+        $this->middleware('permission:admin.departments.store')->only('create', 'store');
+        $this->middleware('permission:admin.departments.update')->only('edit', 'update','status');
+        $this->middleware('permission:admin.departments.destroy')->only('destroy','batchDestroy');
         $this->departmentService = $departmentService;
 
     }

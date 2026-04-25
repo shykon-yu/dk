@@ -22,15 +22,14 @@
             <table class="table table-bordered table-hover table-striped" id="log_form">
                 <thead>
                 <tr>
-                    @foreach($headers as $h)
-                        <th>
-                            @if($h['field'] == 'check')
-                                <input id="all" name="all" type="checkbox" onclick="checkAll()" />
-                            @else
-                                {{ $h['name'] }}
-                            @endif
-                        </th>
-                    @endforeach
+                    <th><input id="all" name="all" type="checkbox" onclick="checkAll()"></th>
+                    <th>ID</th>
+                    <th>菜单名称</th>
+                    <th>路由</th>
+                    <th>关联权限</th>
+                    <th>排序</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
                 </tr>
                 </thead>
                 <tbody id="menu_list">

@@ -14,14 +14,17 @@ class CustomerController extends Controller
     protected $customerService;
     public function __construct(CustomerService $customerService)
     {
+        $this->middleware('permission:admin.customers.index')->only('index');
+        $this->middleware('permission:admin.customers.store')->only('create', 'store');
+        $this->middleware('permission:admin.customers.update')->only('edit', 'update','status');
+        $this->middleware('permission:admin.customers.destroy')->only('destroy','batchDestroy');
         $this->customerService = $customerService;
 
     }
 
     public function index(Request $request)
     {
-        $params = $request->only('name','page');
-        $list = $this->customerService->getCustomersList($params);
+        $list = $this->customerService->getCustomersList($request->all());
         return view('admin.customer.index', compact('list'));
     }
 
@@ -32,7 +35,6 @@ class CustomerController extends Controller
 
     public function store( DepartmentRequest $request )
     {
-//        dd($request->all());
         try{
             $this->customerService->store($request->all());
             return response()->json([

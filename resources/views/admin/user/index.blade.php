@@ -12,14 +12,25 @@
             <form method="get" action="{{ route('admin.users.index') }}" id="search">
                 <input type="text" name="user_name" placeholder="用户名" class="form-control input-sm" value="{{ request('user_name') }}">
                 <input type="text" name="name" placeholder="姓名" class="form-control input-sm" value="{{ request('name') }}">
-
+                <!-- 部门 -->
+                <select name="department_ids[]" id="department_ids" class="selectpicker" data-live-search="true"
+                        multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择部门">
+                    @foreach($_departments as $dept)
+                        <option value="{{ $dept->id }}"
+                                @if(in_array($dept->id, (array)request('department_ids', [])))
+                                    selected
+                            @endif>
+                            {{ $dept->name }}
+                        </option>
+                    @endforeach
+                </select>
                 <button type="button" class="btn btn-info btn-sm" id="T">搜索</button>
                 <button type="reset" class="btn btn-info btn-sm btn-warning" id="R">重置</button>
-
-                <!-- 新增用户按钮 -->
-                <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm pull-right">
-                    <span class="glyphicon glyphicon-plus"></span> 新增用户
-                </a>
+                @can('admin.user.store')
+                    <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm pull-right">
+                        <span class="glyphicon glyphicon-plus"></span> 新增用户
+                    </a>
+                @endcan
             </form>
 
             <!-- 表格 -->
@@ -66,16 +77,23 @@
                         </td>
                         <td>{{ $vo->created_at->format('Y-m-d') }}</td>
                         <td>
-                            @can('admin.user.update')
-                            <a href="{{ route('admin.users.edit', $vo) }}" class="text-info m-r-1">
-                                <span class="glyphicon glyphicon-edit">编辑</span>
-                            </a>
+                            @can('admin.users.update')
+                                @can('update',$vo)
+                                    <a href="{{ route('admin.users.edit', $vo) }}" class="text-info m-r-1">
+                                        <span class="glyphicon glyphicon-edit">编辑</span>
+                                    </a>
+                                @endcan
+
                             @endcan
-                            @can('admin.user.destroy')
-                            <a href="javascript:;" class="delete del_user" data-id="{{ $vo->id }}">
-                                <span class="glyphicon glyphicon-remove">删除</span>&nbsp;
-                            </a>
+                            @if($vo->id != 1)
+                            @can('admin.users.destroy')
+                                    @can('delete', $vo)
+                                    <a href="javascript:;" class="delete del_user" data-id="{{ $vo->id }}">
+                                        <span class="glyphicon glyphicon-remove">删除</span>&nbsp;
+                                    </a>
+                                    @endcan
                             @endcan
+                            @endif
                             <a href="{{ route('admin.users.show', $vo) }}" class="details m-r-1">
                                 <span class="glyphicon glyphicon-list">详情</span>
                             </a>
@@ -91,7 +109,7 @@
                 </tr>
                 <tr>
                     <td colspan="7">
-                        @can('admin.user.destroy')
+                        @can('admin.users.destroy')
                             <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
                         @endcan
                     </td>
@@ -167,9 +185,9 @@
                 $('#search').submit();
             });
 
-            // 重置
             $('#R').click(function () {
-                $('input[name="user_name"], input[name="name"]').val('');
+                $('input[name="name"]').val('');
+                $('.selectpicker').val('').selectpicker('refresh');
                 $('#T').click();
             });
         });

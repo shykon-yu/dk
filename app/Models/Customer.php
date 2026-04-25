@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\ActiveScope;
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Traits\FormatTimeTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +26,8 @@ class Customer extends Base
         static::updating(function ($model) {
             $model->updated_user_id = auth()->id();
         });
+
+        static::addGlobalScope(new DepartmentScope());
     }
     public function department()
     {

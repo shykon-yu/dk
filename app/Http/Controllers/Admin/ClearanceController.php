@@ -3,44 +3,39 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\SupplierRequest;
-use App\Models\Supplier;
-use App\Services\Admin\SupplierService;
+use App\Http\Requests\Admin\ClearanceRequest;
+use App\Models\Clearance;
+use App\Services\Admin\ClearanceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-class SupplierController extends Controller
+class ClearanceController extends Controller
 {
-    protected $supplierService;
-    public function __construct(SupplierService $supplierService)
+    protected $clearanceService;
+    public function __construct(ClearanceService $clearanceService)
     {
-        $this->middleware('permission:admin.suppliers.index')->only('index');
-        $this->middleware('permission:admin.suppliers.store')->only('create', 'store');
-        $this->middleware('permission:admin.suppliers.update')->only('edit', 'update','status');
-        $this->middleware('permission:admin.suppliers.destroy')->only('destroy','batchDestroy');
-        $this->supplierService = $supplierService;
+        $this->middleware('permission:admin.clearances.index')->only('index');
+        $this->middleware('permission:admin.clearances.store')->only('create', 'store');
+        $this->middleware('permission:admin.clearances.update')->only('edit', 'update','status');
+        $this->middleware('permission:admin.clearances.destroy')->only('destroy','batchDestroy');
+        $this->clearanceService = $clearanceService;
 
     }
 
     public function index(Request $request)
     {
-        $params = $request->only('name','page');
-        $list = $this->supplierService->getCSupplierssList($params);
-        return view('admin.supplier.index', compact('list'));
+        $list = $this->clearanceService->getClearancesList($request->all());
+        return view('admin.clearance.index', compact('list'));
     }
 
     public function create()
     {
-        return view('admin.supplier.create');
+        return view('admin.clearance.create');
     }
 
-    public function store( SupplierRequest $request )
+    public function store( ClearanceRequest $request )
     {
-        $supplier_category_id = 1;
-
-        $data = array_merge($request->except('_token'), ['supplier_category_id' => $supplier_category_id]);
         try{
-            $this->supplierService->store($data);
+            $this->clearanceService->store($request->all());
             return response()->json([
                 'code' => 200,
                 'msg' => '新增成功',
@@ -52,17 +47,15 @@ class SupplierController extends Controller
             ]);
         }
     }
-    public function edit(Supplier $supplier)
+    public function edit(Clearance $clearance)
     {
-        $this->authorize('update', $supplier);
-        return view('admin.supplier.edit', compact('supplier'));
+        return view('admin.clearance.edit', compact('clearance'));
     }
 
-    public function update(Supplier $supplier , SupplierRequest $request)
+    public function update(Clearance $clearance , ClearanceRequest $request)
     {
-        $this->authorize('update', $supplier);
         try{
-            $this->supplierService->update($supplier,$request->all());
+            $this->clearanceService->update($clearance,$request->all());
             return response()->json([
                 'code' => 200,
                 'msg' => '修改成功'
@@ -75,11 +68,10 @@ class SupplierController extends Controller
         }
     }
 
-    public function destroy(Supplier $supplier)
+    public function destroy(Clearance $clearance)
     {
-        $this->authorize('destroy', $supplier);
         try{
-            $this->supplierService->destroy($supplier);
+            $this->clearanceService->destroy($clearance);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功',
@@ -102,7 +94,7 @@ class SupplierController extends Controller
             ]);
         }
         try{
-            $this->supplierService->batchDestroy($ids);
+            $this->clearanceService->batchDestroy($ids);
             return response()->json([
                 'code' => 200,
                 'msg' => '删除成功'
@@ -115,14 +107,14 @@ class SupplierController extends Controller
         }
     }
 
-    public function status(Request $request , Supplier  $supplier)
+    public function status(Request $request , Clearance $clearance)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
         try{
-            $supplier = $this->supplierService->changeStatus($supplier, $request->status);
+            $clearance = $this->clearanceService->changeStatus($clearance, $request->status);
             return response()->json([
                 'code'=>200,
-                'status'=>$supplier->status,
+                'status'=>$clearance->status,
                 'msg' => '状态修改成功',
             ]);
         }catch (\Exception $e){

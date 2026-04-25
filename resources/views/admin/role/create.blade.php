@@ -87,52 +87,25 @@
                     <label class="label">分配权限：</label>
                     <div class="field">
                         <div class="permission-box">
-                            @foreach($menuTree as $menu)
-                                {{-- 一级菜单 --}}
+                            {{-- 👇 只改这里循环，其他样式、结构、滚动条全部不变 --}}
+                            @foreach($permissionMap as $group)
                                 <div class="menu-group">
                                     <label class="menu-title">
-                                        <input type="checkbox" class="module-check" data-menu-id="{{ $menu['id'] }}" data-menu-pid="{{ $menu['parent_id'] }}">                                        {{ $menu['title'] }}（全选）
+                                        <input type="checkbox" class="module-check" data-menu-id="{{ $group['menu_id'] }}">
+                                        {{ $group['module'] }}（全选）
                                     </label>
 
-                                    {{-- 该菜单下的权限 --}}
-                                    @if(isset($permissionMap[$menu['id']]) && count($permissionMap[$menu['id']]))
-                                        <div class="child-perms">
-                                            @foreach($permissionMap[$menu['id']] as $perm)
-                                                <label class="perm-item">
-                                                    <input type="checkbox" name="permissions[]"
-                                                           class="perm-check"
-                                                           data-menu-id="{{ $menu['id'] }}"
-                                                           value="{{ $perm->id }}">
-                                                    {{ $perm->title }}
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    @endif
-
-                                    {{-- 二级菜单 --}}
-                                    @if(isset($menu['children']) && count($menu['children']))
-                                        @foreach($menu['children'] as $sub)
-                                            <div class="menu-group" style="margin-left:22px;">
-                                                <label class="menu-title">
-                                                    <input type="checkbox" class="module-check" data-menu-id="{{ $sub['id'] }}" data-menu-pid="{{ $sub['parent_id'] }}">                                                    {{ $sub['title'] }}（全选）
-                                                </label>
-
-                                                @if(isset($permissionMap[$sub['id']]) && count($permissionMap[$sub['id']]))
-                                                    <div class="child-perms">
-                                                        @foreach($permissionMap[$sub['id']] as $perm)
-                                                            <label class="perm-item">
-                                                                <input type="checkbox" name="permissions[]"
-                                                                       class="perm-check"
-                                                                       data-menu-id="{{ $sub['id'] }}"
-                                                                       value="{{ $perm->id }}">
-                                                                {{ $perm->title }}
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            </div>
+                                    <div class="child-perms">
+                                        @foreach($group['children'] as $perm)
+                                            <label class="perm-item">
+                                                <input type="checkbox" name="permissions[]"
+                                                       class="perm-check"
+                                                       data-menu-id="{{ $group['menu_id'] }}"
+                                                       value="{{ $perm->id }}">
+                                                {{ $perm->title }}
+                                            </label>
                                         @endforeach
-                                    @endif
+                                    </div>
                                 </div>
                             @endforeach
                         </div>

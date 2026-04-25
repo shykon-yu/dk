@@ -85,58 +85,44 @@
                     </div>
                 </div>
 
+                <!-- 角色层级 -->
+                <div class="form-item">
+                    <label class="label">角色层级：</label>
+                    <div class="field">
+                        <input type="number" name="level" value="{{ $role->level }}" placeholder="请输入层级数"
+                               class="form-control input-sm w50" required>
+                        <!-- 👇 这里加你要的备注 -->
+                        <span style="margin-left:10px; color:#666; font-size:13px;">
+                            * 例：超管0，老板1，部长2，科长3（数字越小级别越高）
+                        </span>
+                    </div>
+                </div>
+
                 <!-- 权限分配（树形结构 + 自动勾选） -->
                 <div class="form-item">
                     <label class="label">分配权限：</label>
                     <div class="field">
                         <div class="permission-box">
-                            @foreach($menuTree as $menu)
+                            {{-- 👇 只改这里循环，其他样式、结构、滚动条全部不变 --}}
+                            @foreach($permissionMap as $group)
                                 <div class="menu-group">
                                     <label class="menu-title">
-                                        <input type="checkbox" class="module-check" data-menu-id="{{ $menu['id'] }}">
-                                        {{ $menu['title'] }}（全选）
+                                        <input type="checkbox" class="module-check" data-menu-id="{{ $group['menu_id'] }}">
+                                        {{ $group['module'] }}（全选）
                                     </label>
 
-                                    @if(isset($permissionMap[$menu['id']]) && count($permissionMap[$menu['id']]))
-                                        <div class="child-perms">
-                                            @foreach($permissionMap[$menu['id']] as $perm)
-                                                <label class="perm-item">
-                                                    <input type="checkbox" name="permissions[]"
-                                                           class="perm-check"
-                                                           data-menu-id="{{ $menu['id'] }}"
-                                                           value="{{ $perm->id }}"
-                                                        {{ $role->hasPermissionTo($perm) ? 'checked' : '' }}>
-                                                    {{ $perm->title }}
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    @endif
-
-                                    @if(isset($menu['children']) && count($menu['children']))
-                                        @foreach($menu['children'] as $sub)
-                                            <div class="menu-group" style="margin-left:22px;">
-                                                <label class="menu-title">
-                                                    <input type="checkbox" class="module-check" data-menu-id="{{ $sub['id'] }}">
-                                                    {{ $sub['title'] }}（全选）
-                                                </label>
-
-                                                @if(isset($permissionMap[$sub['id']]) && count($permissionMap[$sub['id']]))
-                                                    <div class="child-perms">
-                                                        @foreach($permissionMap[$sub['id']] as $perm)
-                                                            <label class="perm-item">
-                                                                <input type="checkbox" name="permissions[]"
-                                                                       class="perm-check"
-                                                                       data-menu-id="{{ $sub['id'] }}"
-                                                                       value="{{ $perm->id }}"
-                                                                    {{ $role->hasPermissionTo($perm) ? 'checked' : '' }}>
-                                                                {{ $perm->title }}
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            </div>
+                                    <div class="child-perms">
+                                        @foreach($group['children'] as $perm)
+                                            <label class="perm-item">
+                                                <input type="checkbox" name="permissions[]"
+                                                       class="perm-check"
+                                                       data-menu-id="{{ $group['menu_id'] }}"
+                                                       value="{{ $perm->id }}"
+                                                    {{ $role->hasPermissionTo($perm) ? 'checked' : '' }}>
+                                                {{ $perm->title }}
+                                            </label>
                                         @endforeach
-                                    @endif
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -186,11 +172,16 @@
                     });
             });
 
-            // 全选功能（按菜单）
-            $(document).on("click", ".module-check", function(){
-                let menuId = $(this).data("menu-id");
+// 一级菜单全选 → 自动选中当前一级下所有 二级、三级权限
+            $(document).on("click", ".module-check", function() {
                 let checked = $(this).is(":checked");
-                $(".perm-check[data-menu-id='" + menuId + "']").prop("checked", checked);
+                let $group = $(this).closest(".menu-group");
+
+                // 选中当前分组下所有权限
+                $group.find(".perm-check").prop("checked", checked);
+
+                // 选中所有子分组（二级、三级）
+                $group.find(".module-check").prop("checked", checked);
             });
         });
     </script>

@@ -15,7 +15,7 @@
                 <!-- 部门 -->
                 <select name="department_ids[]" id="department_ids" class="selectpicker" data-live-search="true"
                         multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择部门">
-                    @foreach($_departments as $dept)
+                    @foreach($_departments_auth as $dept)
                         <option value="{{ $dept->id }}"
                                 @if(in_array($dept->id, (array)request('department_ids', [])))
                                     selected
@@ -73,6 +73,18 @@
                     @endforeach
                 </select>
 
+                <select name="component_ids[]" id="component_ids" class="selectpicker" data-live-search="true"
+                        multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择成分">
+                    @foreach($_goods_components as $val)
+                        <option value="{{ $val->id }}"
+                                @if(in_array($val->id, (array)request('component_ids', [])))
+                                    selected
+                            @endif>
+                            {{ $val->name  }} - {{ $val->name_kr }} - {{ $val->name_en  }}
+                        </option>
+                    @endforeach
+                </select>
+
                 <!-- 状态 -->
                 <select name="status[]" id="status" class="selectpicker" data-live-search="true"
                         multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择状态">
@@ -113,7 +125,7 @@
                     <th>成分</th>
                     <th>状态</th>
                     <th>星标</th>
-                    <th>排序</th>
+{{--                    <th>排序</th>--}}
                     <th>备注</th>
                     <th>创建人</th>
                     <th>创建时间</th>
@@ -175,14 +187,14 @@
                                 <span class="label label-default">禁用</span>
                             @endif
                         </td>
-                        <td class="change-star" style="cursor:pointer" data-id="{{ $vo->id }}">
+                        <td class="change-star" style="cursor:pointer" data-id="{{ $vo->id }}" data-star="{{ $vo->is_star }}">
                             @if($vo->is_star)
                                 <span class="glyphicon glyphicon-star text-warning" style="font-size:16px;"></span>
                             @else
                                 <span class="glyphicon glyphicon-star-empty text-muted" style="font-size:16px;"></span>
                             @endif
                         </td>
-                        <td>{{ $vo->sort }}</td>
+{{--                        <td>{{ $vo->sort }}</td>--}}
                         <td>
                             <div data-toggle="tooltip"
                                  data-placement="top"
@@ -211,13 +223,12 @@
                         {{ $list->appends(request()->all())->links('pagination::bootstrap-4') }}
                     </td>
                 </tr>
-                <tr>
-                    <td colspan="18">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="Alldel()">批量删除</button>
-                    </td>
-                </tr>
+
                 </tfoot>
             </table>
+            <div style="margin-top:15px; text-align:left;">
+                <input type="button" class="btn btn-danger btn-sm" value="批量删除" onclick="Alldel()">
+            </div>
         </div>
     </div>
 @endsection
@@ -284,16 +295,19 @@
             // 星标切换
             $("#goods_list").on('click', ".change-star", function () {
                 let id = $(this).data('id');
-                let obj = $(this);
+                let now = $(this).data('star');
+                let to = now == 1 ? 0 : 1;
+                if (!confirm("确定" + (to ? "星标" : "取消") + "？")) return false;
+
                 $.post("{{ route('admin.goods.star','') }}/"+id, {
                     _token: "{{ csrf_token() }}",
-                    id: id
+                    star : to
                 }, res => {
                     if (res.code === 200) {
-                        let star = res.is_star
+                        let html = res.star == 1
                             ? '<span class="glyphicon glyphicon-star text-warning" style="font-size:16px;"></span>'
                             : '<span class="glyphicon glyphicon-star-empty text-muted" style="font-size:16px;"></span>';
-                        obj.html(star);
+                        $(this).html(html).data('star',res.star);
                     }
                     alert(res.msg);
                 }).fail(err => alert('操作失败'));

@@ -10,16 +10,30 @@
         <ul>
             @foreach($item['children'] ?? [] as $sub)
                 <li>
-                    <a href="{{ $sub['route'] && $sub['route']!=' ' ? menu_route($sub['route']) : 'javascript:;' }}" target="right">
+                    @php
+                        $hasRoute = !empty($sub['route']) && trim($sub['route']) !== '';
+                        $routeExists = $hasRoute ? \Illuminate\Support\Facades\Route::has(trim($sub['route'])) : false;
+                    @endphp
+
+                    <a href="{{ $routeExists ? menu_route(trim($sub['route'])) : 'javascript:void(0);' }}"
+                       target="{{ $routeExists ? 'right' : '_self' }}"
+                        {{ !$routeExists ? 'onclick="return false;"' : '' }}>
                         <span class="icon-caret-right"></span>{{ $sub['title'] }}
                     </a>
 
-                    {{-- 三级菜单 --}}
                     @if(!empty($sub['children']))
                         <ul>
                             @foreach($sub['children'] as $third)
                                 <li>
-                                    <a href="{{ $third['route'] && $third['route']!=' ' ? menu_route($third['route']) : 'javascript:;' }}" target="right">{{ $third['title'] }}</a>
+                                    @php
+                                        $thirdHasRoute = !empty($third['route']) && trim($third['route']) !== '';
+                                        $thirdRouteExists = $thirdHasRoute ? \Illuminate\Support\Facades\Route::has(trim($third['route'])) : false;
+                                    @endphp
+                                    <a href="{{ $thirdRouteExists ? menu_route(trim($third['route'])) : 'javascript:void(0);' }}"
+                                       target="{{ $thirdRouteExists ? 'right' : '_self' }}"
+                                        {{ !$thirdRouteExists ? 'onclick="return false;"' : '' }}>
+                                        {{ $third['title'] }}
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>

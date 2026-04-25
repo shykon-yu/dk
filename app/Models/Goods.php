@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Traits\FormatTimeTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Goods extends Base
 {
-    use HasFactory , SoftDeletes , FormatTimeTrait;
+    use SoftDeletes , FormatTimeTrait;
     protected $fillable = ['department_id','customer_id','supplier_id','name','code','customer_sku','brand_logo',
         'category_id','season_id','status','is_star','main_image','thumb_image','remark','created_user_id','updated_user_id',
         'old_id'];
@@ -28,6 +29,8 @@ class Goods extends Base
         static::updating(function ($model) {
             $model->updated_user_id = auth()->id();
         });
+
+        static::addGlobalScope(new DepartmentScope);
     }
 
     //生成内部code

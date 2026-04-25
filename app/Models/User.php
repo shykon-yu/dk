@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Scopes\ActiveScope;
+use App\Models\Scopes\DepartmentScope;
+use App\Models\Scopes\DepartmentSelectScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -36,9 +38,21 @@ class User extends Authenticatable
         })->implode(',');
     }
 
+    //部门id是否在权限部门之内
+    public function hasDepartment($departmentId)
+    {
+        if ($this->id === 1) return true;
+
+        // 单部门
+        //return $this->department_id == $departmentId;
+
+        // 多部门
+        return in_array($departmentId, $this->departments->pluck('id')->all());
+    }
+
     protected static function booted()
     {
-        static::addGlobalScope(new ActiveScope());
+        //static::addGlobalScope(new ActiveScope());
     }
 
     public function departments()

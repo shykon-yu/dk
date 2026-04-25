@@ -5,6 +5,7 @@ use App\Services\Admin\Goods\CurrencyService;
 use App\Services\Admin\Goods\GoodsComponentService;
 use App\Services\Admin\Goods\GoodsSeasonService;
 use App\Services\Admin\Goods\GoodsCategoryService;
+use Illuminate\Support\Facades\Auth;
 class ViewDataService
 {
     /**
@@ -15,6 +16,7 @@ class ViewDataService
     {
         return [
             '_departments' => $this->getDepartments(),
+            '_departments_auth' => $this->getDepartmentsAuth(),
             '_customers'   => $this->getCustomers(),
             '_clearances'   => $this->getClearances(),
             '_payments'     => $this->getPayments(),
@@ -31,6 +33,15 @@ class ViewDataService
     public function getDepartments()
     {
         return app(DepartmentService::class)->getCacheAll();
+    }
+
+    public function getDepartmentsAuth()
+    {
+        if( Auth::user() === 1 ){
+            return app(DepartmentService::class)->getCacheAll();
+        }else{
+            return Auth::user()->departments;
+        }
     }
 
     // 获取客户

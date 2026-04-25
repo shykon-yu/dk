@@ -38,6 +38,17 @@
             color: #337ab7 !important;
             font-weight: 500 !important;
         }
+
+    /* 给有子菜单的无路由项加展开/折叠样式 */
+    .leftnav li > a[href="javascript:void(0);"] {
+        cursor: pointer;
+    }
+    .leftnav li > a[href="javascript:void(0);"] .icon-caret-right {
+        transition: transform 0.2s;
+    }
+    .leftnav li > a[href="javascript:void(0);"].expanded .icon-caret-right {
+        transform: rotate(90deg);
+    }
     </style>
 <body>
 
@@ -68,6 +79,10 @@
 <script>
     $(function(){
         $('[data-toggle="tooltip"]').tooltip();
+        $('.leftnav li > a[href="javascript:void(0);"]').click(function() {
+            $(this).toggleClass('expanded');
+            $(this).siblings('ul').toggle(); // 显示/隐藏三级菜单
+        });
     })
     let rotate = 0; // 旋转角度
     let scale = 1;  // 缩放比例

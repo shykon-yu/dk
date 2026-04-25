@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class UserService extends BaseService{
     public function __construct()
@@ -26,15 +27,25 @@ class UserService extends BaseService{
     public function getUsersList($params)
     {
         $data = User::query()
-            //->withoutGlobalScope(ActiveScope::class)//取消全局作用域
-            ->when(!empty($params->username), function ($q) use ($params) {
+            ->when(!empty($params['username']), function ($q) use ($params) {
                 $q->where('username', 'like', "%{$params->username}%");
             })
-            ->when(!empty($params->name), function ($q) use ($params) {
+            ->when(!empty($params['name']), function ($q) use ($params) {
                 $q->where('name', 'like', "%{$params->name}%");
             })
-            ->with(['roles','departments'])
-            //->orderBy('id', 'asc')
+            // 多对多查询：筛选属于某个部门的用户
+            ->when(!empty($params['department_ids']), function ($q) use ($params) {
+                $q->whereHas('departments', function ($subQuery) use ($params) {
+                    $subQuery->whereIn('department_id', $params['department_ids']);
+                });
+            })
+            // 无传参：普通管理员只能看自己部门下的用户
+            ->when(empty($params['department_ids']) && Auth::user()->id != 1, function ($q) {
+                $q->whereHas('departments', function ($subQuery) {
+                    $subQuery->whereIn('department_id', Auth::user()->departments->pluck('id'));
+                });
+            })
+            ->with(['roles', 'departments'])
             ->get();
         return $this->paginateCacheData($data, $params,50);
     }
@@ -108,7 +119,6 @@ class UserService extends BaseService{
                 }
                 return true;
             })->values();
-
             if ($deleteIds->isNotEmpty()) {
                 User::destroy($deleteIds);
             }

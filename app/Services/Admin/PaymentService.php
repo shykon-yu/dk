@@ -7,7 +7,7 @@ class PaymentService extends BaseService{
     public function __construct()
     {
         $this->modelClass = Payment::class;
-        $this->cacheKey = 'goods_payment_all';
+        $this->cacheKey = 'payment_all';
     }
 
     public function getCacheAll()
@@ -21,12 +21,12 @@ class PaymentService extends BaseService{
 
     public function getPaymentsList($params)
     {
-        $data = $this->getAllWithoutTrashed();
-        if (!empty($params['name'])) {
-            $data = $data->filter(function ($item) use ($params) {
-                return str_contains($item->name, $params['name']);
-            });
-        }
+        $data = $this->modelClass::query()
+            ->when(!empty($params['name']), function ($query) use ($params) {
+                $query->where('name', 'like', '%'.trim($params['name']).'%');
+            })
+            ->orderBy('sort', 'asc')
+            ->get();
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
 }

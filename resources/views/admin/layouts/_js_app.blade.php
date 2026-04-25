@@ -17,4 +17,7 @@
 <script src="/js/tableFix.js"></script>
 
 <!-- 5. 页面自定义扩展 JS（最后加载） -->
+@yield('script_js')
 @yield('extends_js')
+
+

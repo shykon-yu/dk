@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 abstract class BaseService
 {
@@ -61,6 +62,19 @@ abstract class BaseService
     public function batchDestroy(array $ids): bool
     {
         try {
+            $currentLevel = Auth::user()->roles->sortBy('level')->first()?->level ?? 999;
+            if( $currentLevel > 1 ){
+                $datas = $this->getModelClass()::whereIn('id', $ids)->get();
+                foreach ($datas as $data) {
+                    $targetLevel = $data->creator->roles->sortBy('level')->first()?->level ?? 999;
+                    $created_user_id = $data->creator->id ?? null;
+                    if ($currentLevel > $targetLevel) {
+                        if( !is_null($created_user_id) && Auth::id() !== $created_user_id ){
+                            throw new \Exception('存在无法删除的数据');
+                        }
+                    }
+                }
+            }
             $this->getModelClass()::destroy($ids);
             $this->clearCache();
             return true;
@@ -131,6 +145,18 @@ abstract class BaseService
             return $model;
         } catch (\Exception $e) {
             throw new \Exception($this->formatMsg('状态修改', $e->getMessage()));
+        }
+    }
+
+    public function changeStar(Model $model, int $star): object
+    {
+        try {
+            $model->is_star = $star;
+            $model->save();
+            $this->clearCache();
+            return $model;
+        } catch (\Exception $e) {
+            throw new \Exception($this->formatMsg('星标修改', $e->getMessage()));
         }
     }
 

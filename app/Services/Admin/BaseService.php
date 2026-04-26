@@ -122,7 +122,7 @@ abstract class BaseService
         return (new $this->modelClass)->getPerPage();
     }
 
-    // 通用内存分页（缓存数据后，全局复用的分页逻辑）
+    // 通用内存分页
     protected function paginateCacheData($collection, array $params, int $perPage = 20): LengthAwarePaginator
     {
         $page = $params['page'] ?? 1;

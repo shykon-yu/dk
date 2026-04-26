@@ -40,4 +40,8 @@ class Supplier extends Base
         return $this->hasMany(Goods::class);
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

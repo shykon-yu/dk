@@ -122,4 +122,9 @@ class Goods extends Base
     {
         return $this->hasMany(GoodsSkuStock::class,'goods_id','id');
     }
+
+    public function orderItems()
+    {
+        return $this->hasMany( orderItem::class, 'goods_id','id' );
+    }
 }

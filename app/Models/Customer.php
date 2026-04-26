@@ -68,4 +68,9 @@ class Customer extends Base
     {
         return $this->hasMany(self::class);
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

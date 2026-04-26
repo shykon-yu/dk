@@ -22,8 +22,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
         Route::get('/migrate',[UserMigrationController::class,'migrate'])->name('migrate');
 
-        require __DIR__ . '/admin/users.php';
-        require __DIR__ . '/admin/goods.php';
+        require __DIR__ . '/admin/users.php';//用户 角色 菜单 客户 供应商等
+        require __DIR__ . '/admin/goods.php';//商品相关
+        require __DIR__ . '/admin/orders.php';//订单相关
         require __DIR__ . '/admin/common.php';
     });
 

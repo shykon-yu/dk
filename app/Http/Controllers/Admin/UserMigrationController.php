@@ -11,11 +11,95 @@ use App\Models\Sku;
 
 class UserMigrationController extends Controller
 {
-    protected $chunkSize = 200;// 每次插200条，避免数据包太大
+    protected $chunkSize = 20;// 每次插200条，避免数据包太大
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateComponent2();
+        $this->updateStatus();
+    }
+
+    public function updateStatus(){
+        DB::table("order_items")
+            ->where('status', 1)
+            ->update(['status' => 2]);
+    }
+    public function migrateOrder()
+    {
+        $chunkSize = 50;
+
+        // 只拿订单号
+        $orderNumbers = DB::table('dk_order')
+            ->select('order_number')
+            ->distinct()
+            ->pluck('order_number'); // Collection
+
+        foreach ($orderNumbers->chunk($chunkSize) as $chunkOrderNos) {
+
+            DB::beginTransaction();
+            try {
+                $allItems = DB::table('dk_order')
+                    ->whereIn('order_number', $chunkOrderNos)
+                    ->get();
+
+                $grouped = $allItems->groupBy('order_number');
+                foreach ($grouped as $orderNo => $items) {
+                    // 防重复
+                    $exists = DB::table('orders')->where('order_code', $orderNo)->exists();
+                    if ($exists) {
+                        continue;
+                    }
+
+                    // ===================== 1. 插入主表 orders =====================
+                    $first = $items[0]; // 取第一条当主单信息
+
+                    $mainData = [
+                        'department_id' => $first->department_id,
+                        'customer_id'   => $first->custom_id,
+                        'supplier_id'   => $first->supplier_company_id,
+                        'order_code'    => $orderNo,
+                        'status'        => $first->order_status, // 刚下单
+                        'ordered_at'    => $first->order_date ?? null,
+                        'delivery_at'   => $first->delivery_date ?? null,
+                        'remark'        => $first->remark ?? null,
+                        'is_star'       => $first->star_marks,
+                        'created_user_id' =>$first->user_id,
+                        'updated_user_id' =>$first->user_id,
+                        'created_at'    => $first->add_time_date ?? null,
+                        'updated_at'    => $first->update_time_date ?? null,
+                        'deleted_at'    => $first->delete_time_date ?? null,
+                    ];
+                    //dd($mainData);
+                    $orderId = DB::table('orders')->insertGetId($mainData);
+
+                    // ===================== 2. 插入子单 order_items =====================
+                    $insertItems = [];
+                    foreach ($items as $item) {
+                        $insertItems[] = [
+                            'order_id'          => $orderId,
+                            'goods_id'          => $item->products_id,
+                            'sku_id'            => $item->products_color_id,
+                            'color_card'        => $item->color_card ?? null,
+                            'number'            => $item->number,
+                            'received_quantity' => $item->inbound_number,
+                            'unit_id'           => $item->unit_id ?? 1,
+                            'currency_id'       => $item->currency_id,
+                            'price'             => $item->price,
+                            'status'            => $item->order_status,
+                            'created_at'        => $item->add_time_date,
+                            'updated_at'        => $item->update_time_date,
+                            'deleted_at'        => $item->delete_time_date ?? null,
+                        ];
+                    }
+                    // 批量插入（超快）
+                    DB::table('order_items')->insert($insertItems);
+                }
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        }
     }
 
     public function migrateComponent2()

@@ -96,9 +96,9 @@
                     <th>已入库</th>
                     <th>单价</th>
                     <th>金额</th>
-                    <th>总数量{{$mainOrders->sum('total_number')}}</th>
+                    <th>总数量<br><span>{{$mainOrders->sum('total_number')}}</span></th>
                     <th>总收货</th>
-                    <th>总金额{{
+                    <th>总金额<br><span>{{
                         $mainOrders->reduce(function ($carry, $item) {
                             return bcadd(
                                 (string)($carry ?? 0),
@@ -106,7 +106,7 @@
                                 2
                             );
                         })
-                    }}</th>
+                    }}</span></th>
                     <th>订单号</th>
                     <th>状态</th>
                     <th>星标</th>

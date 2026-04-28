@@ -5,6 +5,7 @@ use App\Services\Admin\Goods\CurrencyService;
 use App\Services\Admin\Goods\GoodsComponentService;
 use App\Services\Admin\Goods\GoodsSeasonService;
 use App\Services\Admin\Goods\GoodsCategoryService;
+use App\Services\Admin\Goods\GoodsService;
 use Illuminate\Support\Facades\Auth;
 class ViewDataService
 {

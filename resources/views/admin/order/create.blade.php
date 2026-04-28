@@ -1,40 +1,17 @@
 @extends('admin.layouts.app')
 
-@section('extends_js')
-    <script src="/js/jquery-ui-1.9.2.custom.js"></script>
-    <script src="/js/jquery.form.js"></script>
-    <script src="/js/jquery.mousewheel.min.js"></script>
-    <script src="/js/tableFix.js"></script>
-@endsection
-
 @section('extends_css')
     <link rel="stylesheet" href="/css/font-awesome.min.css">
-    <link rel="stylesheet" type="text/css" href="/ajaxupload/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/ajaxupload/css/style.css"/>
     <style>
-        /* 整体宽度 50% */
-        #dialog_radius {
-            width: 50% !important;
-            min-width: 500px;
-        }
-        .upload_label .upload_image {
-            height: 35px;
-        }
-        #dialog_radius td {
+        #log td {
             vertical-align: middle;
             text-align: center;
         }
 
-        /* 加减号按钮美化（横向并排） */
-        .btn-row {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-row .btn {
-            padding: 2px 8px !important;
-            font-size: 12px !important;
-            line-height: 1.2 !important;
+        .product_minus, .product_plus {
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 @endsection
@@ -43,386 +20,340 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span class="glyphicon glyphicon-pencil"></span>
-            <span class="panel-tit">产品录入</span>
+            <span class="panel-tit">添加订货</span>
         </div>
         <div class="panel-body navbar-form">
             <form id="order" onkeydown="if(event.keyCode==13)return false;">
 
-                {{-- 顶部下拉 --}}
-                <select class="form-control input-sm" name="department_id" id="department_id" style="width:18%;display:inline-block;">
+                <select class="form-control input-sm" name="department_id" id="department_id">
                     <option value="">-请选择部门-</option>
-                    @foreach($_departments as $vo)
+                    @foreach($_departments_auth as $vo)
                         <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="customer_id" id="customer_id" style="width:18%;display:inline-block;">
+                <select class="form-control input-sm" name="customer_id" id="customer_id">
                     <option value="">-请选择客户-</option>
                 </select>
 
-                <select name="supplier_id" id="supplier_id" class="selectpicker" style="width:28%;display:inline-block;"
+                <select name="supplier_company_id" id="supplier_company_id" class="selectpicker"
                         data-live-search="true" data-live-search-placeholder="Search"
-                        data-actions-box="true" title="请选择默认供应商">
+                        data-actions-box="true" title="请选择供应商">
                     @foreach($_suppliers as $vo)
                         <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="season_id" id="season_id" style="width:28%;display:inline-block;">
-                    @foreach($_goods_seasons as $vo)
-                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                    @endforeach
-                </select>
+                <div class="input-group">
+                    <input class="form-control input-sm" name="order_date" id="order_date" autocomplete="off"
+                           placeholder="订货日期" type="text">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
+                <div class="input-group">
+                    <input class="form-control input-sm" name="delivery_date" id="delivery_date" autocomplete="off"
+                           placeholder="交货日期" type="text">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
 
-                <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped" style="margin-top:2em;">
-                    <tbody class="text-center p_body" id="major_log">
+                <span class="order">订单号：<span id="order_number"></span></span>
 
+                <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped"
+                       style="margin-top:2em;">
+                    <thead>
                     <tr>
-                        <td>产品名称：</td>
-                        <td data-key="name" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" id="name" name="name" placeholder="请填写产品名称">
-                        </td>
+                        <th colspan="2">排头信息</th>
+                        <th colspan="4">产品信息</th>
+                        <th colspan="6">订单信息</th>
+{{--                        <th colspan="6">辅材信息</th>--}}
                     </tr>
-                    <tr><td></td></tr>
-
                     <tr>
-                        <td>产品货号：</td>
-                        <td data-key="customer_sku" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" id="customer_sku" name="customer_sku" placeholder="请填写产品货号">
-                        </td>
+                        <th>操作</th>
+                        <th>序号</th>
+                        <th>产品</th>
+                        <th>图片</th>
+                        <th>颜色</th>
+                        <th>色号</th>
+                        <th>数量</th>
+                        <th>货币</th>
+                        <th>单价</th>
+                        <th>金额</th>
+                        <th>备注</th>
+{{--                        <th style='color:blueviolet'>供应商1</th>--}}
+{{--                        <th style='color:blueviolet'>单价1</th>--}}
+{{--                        <th style='color:blueviolet'>金额1</th>--}}
+{{--                        <th style='color:blueviolet'>供应商2</th>--}}
+{{--                        <th style='color:blueviolet'>单价2</th>--}}
+{{--                        <th style='color:blueviolet'>金额2</th>--}}
                     </tr>
-                    <tr><td></td></tr>
-
+                    </thead>
+                    <tbody class="text-center p_body" id="log">
                     <tr>
-                        <td>品牌LOGO：</td>
-                        <td data-key="brand_logo" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" name="brand_logo" placeholder="请填写品牌LOGO">
+                        <td>
+{{--                            <span class="glyphicon glyphicon-minus product_minus"></span>&nbsp;&nbsp;--}}
+{{--                            <span class="glyphicon glyphicon-plus product_plus"></span>--}}
+                            <div class="btn-row">
+                                <button type="button" class="btn btn-sm btn-danger goods_minus ">-</button>
+                                <button type="button" class="btn btn-sm btn-success goods_plus ">+</button>
+                            </div>
                         </td>
-                    </tr>
-                    <tr><td></td></tr>
+                        <td class="serial_number">1</td>
+                        <td data-key="goods_id" class="padding_0 select_products">
+                            <select name="goods_id"
+                                    class="input_no_border form-control selectpicker goods_id"
+                                    data-live-search="true"
+                                    data-live-search-placeholder="输入货号/名称搜索"
+                                    title="请选择产品">
+                                @foreach($goods as $good)
+                                    <option value="{{$good->id}}">{{$good->customer_sku}}</option>
+                                @endforeach
 
-                    {{-- ===================== 一级二级分类 同行 ===================== --}}
-                    <tr>
-                        <td>产品类目：</td>
-                        <td class="padding_0 number" style="display:flex;gap:5px;">
-                            <select name="category_pid" id="category_pid" class="form-control input-sm selectpicker"
-                                    data-live-search="true" title="一级类目" style="width:48%;">
-                                @foreach($_goods_categories as $vo)
-                                    <option value="{{ $vo->id }}">{{ $vo->name }}</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; ">
+                                {{-- 缩略图 --}}
+                                <img height="20px" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                                     class="thumb-img click-preview"
+                                     data-src=""
+                                     style="width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
+
+                                {{-- 右侧悬浮预览图 --}}
+                                <img src=""
+                                     class="hover-preview"
+                                     style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
+                            </div>
+                        </td>
+                        <td data-key="sku_id" class="padding_0">
+                            <select name="sku_id"
+                                    class="form-control input_no_border input-sm sku_id">
+                                <option value="">--请选择颜色--</option>
+                            </select>
+                        </td>
+                        <td data-key="color_card" class="padding_0">
+                            <input type="text" class="form-control input-sm input_no_border color_card"
+                                   name="color_card" placeholder="色号">
+                        </td>
+                        <td data-key="number" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm number" name="number"
+                                   value="0" placeholder="数量">
+                        </td>
+                        <td data-key="currency_id" class="padding_0">
+                            <select class="form-control input_no_border input-sm currency_id" name="currency_id">
+                                @foreach($_currencies as $vo)
+                                    <option value="{{ $vo->id }}"
+                                            currency_icon="{{ $vo->currency_symbol }}" {{ $vo->id==1 ? 'selected' : '' }}>
+                                        {{ $vo->name }}
+                                    </option>
                                 @endforeach
                             </select>
-                            <select name="category_id" id="category_id" class="form-control input-sm selectpicker"
-                                    data-live-search="true" title="二级分类" style="width:48%;">
-                            </select>
                         </td>
-                    </tr>
-
-                    <tr>
-                        <td>仓库：</td>
-                        <td data-key="warehouse_id" class="padding_0 number">
-                            <select name="warehouse_id" id="warehouse_id"
-                                    class="form-control selectpicker" data-live-search="true"
-                                    data-live-search-placeholder="搜索" data-actions-box="true" title="请选择仓库">
-                            </select>
+                        <td data-key="price" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm price" name="price"
+                                   placeholder="单价">
                         </td>
-                    </tr>
-
-                    <tr>
-                        <td>产品主图：</td>
-                        <td data-key="color_image_id" class="padding_0 number">
-                            <input type="hidden" name="main_image" id="main_image" value="">
-                            <input type="hidden" name="thumb_image" id="thumb_image" value="">
-                            <img id="preview_img" style="float:left;display:inline-block" width="40px" src="">
-                            <label class="upload_label">
-                                <input type="button" class="btn" value="点我上传">
-                                <span class="text"></span>
-                                <input type="file" id="upload_img" class="upload_image" accept="image/*">
-                            </label>
+                        <td data-key="money" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm money" name="money"
+                                   placeholder="金额">
                         </td>
+                        <td data-key="remark" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm remark" name="remark"
+                                   placeholder="备注">
+                        </td>
+{{--                        <td data-key="process_company_id" class="padding_0">--}}
+{{--                            <select name="process_company_id"--}}
+{{--                                    class="input_no_border form-control selectpicker process_company_id"--}}
+{{--                                    data-live-search="true" title="供应商">--}}
+{{--                                <option value="0">供应商</option>--}}
+{{--                                @foreach($_suppliers as $vo)--}}
+{{--                                    <option value="{{ $vo->id }}">{{ $vo->name }}</option>--}}
+{{--                                @endforeach--}}
+{{--                            </select>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_price" class="padding_0">--}}
+{{--                            <input type="text" value="0" class="form-control input_no_border input-sm process_price"--}}
+{{--                                   name="process_price">--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_money" class="padding_0">--}}
+{{--                            <input type="text" class="form-control input_no_border input-sm process_money" value="0"--}}
+{{--                                   name="process_money" readonly>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_company_id2" class="padding_0">--}}
+{{--                            <select name="process_company_id2"--}}
+{{--                                    class="input_no_border form-control selectpicker process_company_id2"--}}
+{{--                                    data-live-search="true" title="供应商">--}}
+{{--                                <option value="0">供应商</option>--}}
+{{--                                @foreach($_suppliers as $vo)--}}
+{{--                                    <option value="{{ $vo->id }}">{{ $vo->name }}</option>--}}
+{{--                                @endforeach--}}
+{{--                            </select>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_price2" class="padding_0">--}}
+{{--                            <input type="text" value="0" class="form-control input_no_border input-sm process_price2"--}}
+{{--                                   name="process_price2">--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_money2" class="padding_0">--}}
+{{--                            <input type="text" class="form-control input_no_border input-sm process_money2" value="0"--}}
+{{--                                   name="process_money2" readonly>--}}
+{{--                        </td>--}}
                     </tr>
-                    <tr><td></td></tr>
-
                     </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>操作</th>
+                        <th>序号</th>
+                        <th>产品</th>
+                        <th>图片</th>
+                        <th>颜色</th>
+                        <th>色号</th>
+                        <th>数量<br><span id="total_number"></span></th>
+                        <th>货币</th>
+                        <th>单价</th>
+                        <th>金额<br><span id="total_money"></span></th>
+                        <th>备注</th>
+{{--                        <th>供应商1</th>--}}
+{{--                        <th>单价1</th>--}}
+{{--                        <th>金额1<br><span id="total_process_money"></span></th>--}}
+{{--                        <th>供应商2</th>--}}
+{{--                        <th>单价2</th>--}}
+{{--                        <th>金额2<br><span id="total_process_money2"></span></th>--}}
+                    </tr>
+                    <tr class="hidden" id="timg">
+                        <th colspan="18"><img src="/images/timg.gif"/>正在提交中...</th>
+                    </tr>
+                    </tfoot>
                 </table>
 
-                {{-- ===================== 产品成分（独立模块 + 百分比） ===================== --}}
-                <div style="width:50%;margin-top:30px;">
-                    <label style="font-weight:bold;">产品成分</label>
-                    <table class="table table-bordered table-condensed table-hover table-striped" style="margin:0;">
-                        <thead>
-                        <tr>
-                            <th>操作</th>
-                            <th>成分</th>
-                            <th>百分比(%)</th>
-                        </tr>
-                        </thead>
-                        <tbody id="component_tbody">
-                        <tr class="component_tr">
-                            <td>
-                                <div class="btn-row">
-                                    <button type="button" class="btn btn-sm btn-danger component_minus">-</button>
-                                    <button type="button" class="btn btn-sm btn-success component_plus">+</button>
-                                </div>
-                            </td>
-                            <td>
-                                <select name="component_id[]"  class="form-control input-sm selectpicker"
-                                        data-live-search="true" title="选择成分">
-                                    @foreach($_goods_components as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="number" name="component_percent[]" class="form-control input-sm" placeholder="%" value="100"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- ===================== 颜色分类 ===================== --}}
-                <div style="width:100%;margin-top:30px;">
-                    <label style="font-weight:bold;">颜色分类</label>
-                    <table class="table table-bordered table-condensed table-hover table-striped" style="margin:0;">
-                        <thead>
-                        <tr>
-                            <th colspan="3">批量输入</th>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="color_card" placeholder="批量色号"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="stock" placeholder="批量库存"></td>
-
-                            <td>
-                                <select class="form-control input-sm batch_currency_sell">
-                                    <option value="">-售价货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="sell_price" placeholder="批量售价1"></td>
-
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="sell_price2" placeholder="批量售价2"></td>
-
-                            <td>
-                                <select class="form-control input-sm batch_currency_cost">
-                                    <option value="">-成本货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="cost_price" placeholder="批量进价1"></td>
-
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="cost_price2" placeholder="批量进价2"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="process_price" placeholder="批量辅材1"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="process_step2_price" placeholder="批量辅材2"></td>
-                        </tr>
-                        <tr>
-                            <th>操作</th>
-                            <th>启用状态</th>
-                            <th>颜色名称</th>
-                            <th>色号</th>
-                            <th>库存</th>
-                            <th>售价货币</th>
-                            <th>售价1</th>
-                            <th>售价2</th>
-                            <th>成本货币</th>
-                            <th>进价1</th>
-                            <th>进价2</th>
-                            <th>辅材1</th>
-                            <th>辅材2</th>
-                        </tr>
-                        </thead>
-                        <tbody id="log_color">
-                        <tr class="tr_spec">
-                            <td>
-                                <div class="btn-row">
-                                    <button type="button" class="btn btn-sm btn-danger color_minus">-</button>
-                                    <button type="button" class="btn btn-sm btn-success color_plus">+</button>
-                                </div>
-                            </td>
-                            <td data-key="status">
-                                <select class="form-control input-sm status" name="status[]">
-                                    <option value="1">启用</option>
-                                    <option value="0">不启用</option>
-                                </select>
-                            </td>
-                            <td data-key="color"><input type="text" class="form-control input-sm color" name="color[]" placeholder="颜色"></td>
-                            <td data-key="color_card"><input type="text" class="form-control input-sm color_card" name="color_card[]"></td>
-                            <td data-key="stock"><input type="text" class="form-control input-sm stock" name="stock[]" value="0"></td>
-
-                            <td data-key="sell_currency_id">
-                                <select class="form-control input-sm sell_currency_id" name="sell_currency_id[]">
-                                    <option value="">-售价货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td data-key="sell_price"><input type="text" class="form-control input-sm sell_price" name="sell_price[]" value="0"></td>
-                            <td data-key="sell_price2"><input type="text" class="form-control input-sm sell_price2" name="sell_price2[]" value="0"></td>
-
-                            <td data-key="cost_currency_id">
-                                <select class="form-control input-sm cost_currency_id" name="cost_currency_id[]">
-                                    <option value="">-成本货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td data-key="cost_price"><input type="text" class="form-control input-sm cost_price" name="cost_price[]" value="0"></td>
-
-                            <td data-key="cost_price2"><input type="text" class="form-control input-sm cost_price2" name="cost_price2[]" value="0"></td>
-                            <td data-key="process_price"><input type="text" class="form-control input-sm process_price" name="process_price[]" value="0"></td>
-                            <td data-key="process_step2_price"><input type="text" class="form-control input-sm process_step2_price" name="process_step2_price[]" value="0"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- 备注 --}}
-                <div style="width:50%;margin-top:20px;">
-                    <label style="font-weight:bold;">备注</label>
-                    <textarea class="form-control input-sm" id="remark" name="remark" placeholder="请填写备注"cols="80" rows="3"></textarea>
-                </div>
-
-                {{-- 提交 --}}
-                <div style="width:50%;margin-top:20px;text-align:right;">
-                    <button class="btn btn-success" type="submit" id="p_confirm">提交</button>
-                </div>
-
+                <button class="btn btn-success pull-right" type="submit" id="p_confirm">提交</button>
             </form>
         </div>
+    </div>
 
+    <div class="form-group container">
+        <label for="comment">其他注意事项:</label>
+        <textarea class="form-control" rows="5" id="comment"></textarea>
+    </div>
+
+    <div id="success" class="text-center text-info" style="display:none;">
+        <div style="margin-top:1.5em"><span class="glyphicon glyphicon-ok"></span>&nbsp;&nbsp;添加成功</div>
+    </div>
+
+    <!-- 上传Excel -->
+    <div class="upload_main container" id="upload_file">
+        <h4 class="title">上传生产通知书</h4>
+        <input type="hidden" name="excel_id" id="excel_id" value="0">
+        <label class="upload_label">
+            <span class="text"></span>
+            <input type="file" id="fileinp" class="upload_excel" accept="*">
+        </label>
     </div>
 @endsection
 
 @section('script_js')
     <script>
-        $(function(){
-            $(document).on('change', '#upload_img', function(){
-                let file = $(this)[0].files[0];
-                if (!file) return;
+        // 全局缓存：当前客户的【默认200个商品】
+        var CURRENT_CUSTOMER_DEFAULT_GOODS = [];
+        // 存商品搜索框的关键词
+        var GOODS_SEARCH_KEYWORD = '';
+        $(function () {
+            // 日期初始化
+            $("#order_date").datepicker({maxDate: 0});
+            $("#delivery_date").datepicker();
 
-                let formData = new FormData();
-                formData.append('file', file);
-                formData.append('_token', "{{ csrf_token() }}");
+            // 订单号
+            var u = new Date().getTime();
+            var mi = Math.floor(Math.random() * 900 + 100);
+            $("#order_number").text("o" + u + mi);
 
-                $.ajax({
-                    url: "{{ route('admin.goods.upload.image') }}",
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (res) {
-                        if (res.code === 200) {
-                            // 1. 存入图片 ID（原有逻辑保留）
-                            $('#goods_image_id').val(res.data.id);
-
-                            // 2. 存入主图/缩略图路径（后端返回的原始路径）
-                            $('#main_image').val(res.data.url);
-                            $('#thumb_image').val(res.data.thumb_url);
-
-                            // 3. 预览图用 asset() 拼接完整路径（Laravel 资源路径）
-                            let previewUrl = "{{ asset(':url') }}".replace(':url', res.data.url);
-                            $('#preview_img').attr('src', previewUrl);
-
-                            alert('上传成功');
-                        } else {
-                            alert(res.msg ?? '上传失败');
-                        }
-                    },
-                    error: function () {
-                        alert('上传请求失败');
-                    }
-                });
-            });
-
-            // ===================== 一级分类 → 二级分类 AJAX =====================
-            $(document).on('change', '#category_pid', function(){
-                let pid = $(this).val();
-                $('#category_id').html('<option value="">-选择二级分类-</option>').selectpicker('refresh');
-                if(!pid) return;
-
-                $.post("{{ route('admin.common.category-by-parent') }}", {
-                    pid: pid,
-                    _token: "{{ csrf_token() }}"
-                }, function(res){
-                    if (res.code !== 200) {
-                        alert(res.msg || '获取失败');
-                        return;
-                    }
-                    let html = '<option value="">-选择二级分类-</option>';
-                    if(res.data) {
-                        res.data.forEach(item => {
-                            html += `<option value="${item.id}">${item.name}</option>`;
-                        });
-                    }
-                    $('#category_id').html(html).selectpicker('refresh');
-                }, 'json').fail(function(){
-                    alert('服务器请求失败');
-                });
-            });
-
-            // ===================== 成分 加减 =====================
-            $(document).on('click', '.component_plus', function(){
-                let tr = $(this).closest('.component_tr').clone();
-                tr.find('.bootstrap-select').find('button:first').remove();
-                tr.find('.selectpicker').selectpicker('val', '');
-                tr.find('input[name="component_percent[]"]').val(0);
-                $('#component_tbody').append(tr);
-                tr.find('.selectpicker').selectpicker('refresh');
-                tr.find('.selectpicker').selectpicker('render');
-            });
-
-            $(document).on('click', '.component_minus', function(){
-                if($('#component_tbody .component_tr').length <=1){
-                    alert('至少保留一行成分');
-                    return false;
+            // 回车切换
+            $(document).on("keyup", "input", function (e) {
+                if (e.keyCode == 13) {
+                    $(this).parents("tr").next().find("input").select();
                 }
-                $(this).closest('.component_tr').remove();
             });
 
-            // ===================== 颜色 加减 =====================
-            $(document).on('click', '.color_plus', function(){
-                let tr = $(this).closest('.tr_spec').clone();
-                tr.find('input').not('.sell_price,.sell_price2,.cost_price,.cost_price2,.process_price,.process_step2_price').val('0');
-                tr.find('.color').val('');
-                $('#log_color').append(tr);
+            // 加行
+            $(document).on("click", ".goods_plus", function () {
+                let _this_tr = $(this).parents("tr");
+                let main_image = _this_tr.find('.thumb-img').data('src');
+                let tr = _this_tr.clone();
+                _this_tr.after(tr);
+                _this_tr.next().find('.thumb-img').data('src',main_image);
+                _this_tr.next().find('.bootstrap-select').find("button:first").remove();
+                _this_tr.next().find('.selectpicker').selectpicker("val");
+                _this_tr.next().find("input,select").not(".goods_id,.process_company_id,.process_company_id2,.currency_id").val("");
+                _this_tr.next().find(".process_price,.process_price2,.number").val(0);
+                _this_tr.next().find(".money,.process_money,.process_money2").val(0);
+                _this_tr.next().find('.selectpicker').selectpicker('refresh');
+                _this_tr.next().find('.selectpicker').selectpicker('render');
+
+                setTimeout(() => {
+                    _this_tr.next().find('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
+                }, 100);
+                // $(this).remove();
+                refreshSerial();
             });
-            $(document).on('click', '.color_minus', function(){
-                if($('#log_color .tr_spec').length <=1){
-                    alert('至少保留一行颜色'); return;
+
+            // 减行
+            $(document).on("click", ".goods_minus", function () {
+                if ($("#log tr").length <= 1) {
+                    alert("至少保留一行");
+                    return;
                 }
-                $(this).closest('.tr_spec').remove();
+                $(this).parents("tr").remove();
+                refreshSerial();
+                totalAll();
             });
 
-            // ===================== 批量输入 =====================
-            $(document).on('input', '.batch_all', function(){
-                let cls = $(this).data('target');
-                let val = $(this).val();
-                $('#log_color .'+cls).val(val);
+            function refreshSerial() {
+                $(".serial_number").each(function (i) {
+                    $(this).text(i + 1);
+                });
+            }
+
+            // 计算
+            $(document).on("input propertychange", ".p_body input", function () {
+                stereNum(this);
+                totalAll();
             });
 
-            // ===================== 批量货币 =====================
-            $(document).on('change', '.batch_currency_sell', function(){
-                let val = $(this).val();
-                $('.sell_currency_id').val(val);
-            });
-            $(document).on('change', '.batch_currency_cost', function(){
-                let val = $(this).val();
-                $('.cost_currency_id').val(val);
-            });
+            function stereNum(obj) {
+                let self = $(obj).parents("tr");
+                let price = parseFloat(self.find(".price").val() || 0);
+                let number = parseFloat(self.find(".number").val() || 0);
+                // let p1 = parseFloat(self.find(".process_price").val() || 0);
+                // let p2 = parseFloat(self.find(".process_price2").val() || 0);
+                self.find(".money").val((price * number).toFixed(2));
+                // self.find(".process_money").val((p1 * number).toFixed(2));
+                // self.find(".process_money2").val((p2 * number).toFixed(2));
+            }
 
-            // ===================== 部门切换 → 加载客户 + 仓库 =====================
+            // 合计
+            function totalAll() {
+                total("number", 0);
+                total("money", 2);
+                // total("process_money", 2);
+                // total("process_money2", 2);
+            }
+
+            function total(t, n) {
+                let sum = 0;
+                $("." + t).each(function () {
+                    sum += parseFloat($(this).val() || 0);
+                });
+                $("#total_" + t).text(sum.toFixed(n));
+            }
+
+            // 部门 → 客户
             $(document).on('change', '#department_id', function () {
                 let department_id = $(this).val();
                 $('#customer_id').html('<option value="">-请选择客户-</option>');
-                $('#warehouse_id').html('').selectpicker('refresh');
                 if (!department_id) return;
 
                 // 客户
                 $.ajax({
                     url: "{{ route('admin.common.customer-by-dept') }}",
                     type: "POST",
-                    data: { _token: "{{ csrf_token() }}", department_id: department_id },
+                    data: {_token: "{{ csrf_token() }}", department_id: department_id},
                     dataType: "json",
                     success: function (res) {
                         if (res.code === 200) {
@@ -434,126 +365,217 @@
                         }
                     }
                 });
+            });
 
-                // 仓库
+            // 选择客户 → 加载该客户的默认200个商品
+            $(document).on('change', '#customer_id', function () {
+                let customer_id = $(this).val();
+                let $select = $("select[name='goods_id']");
+
+                if (!customer_id) {
+                    $select.html('').selectpicker('refresh');
+                    CURRENT_CUSTOMER_DEFAULT_GOODS = []; // 清空缓存
+                    return;
+                }
+                GOODS_SEARCH_KEYWORD = ''; // 切换客户清空
+                // AJAX 获取 200 个默认商品
                 $.ajax({
-                    url: "{{ route('admin.common.warehouse-by-dept') }}",
-                    type: "POST",
-                    data: { _token: "{{ csrf_token() }}", department_id: department_id },
-                    dataType: "json",
+                    url: "{{ route('admin.common.customer-default-goods') }}",
+                    type: 'POST',
+                    data: { customer_id: customer_id, _token: "{{ csrf_token() }}" },
                     success: function (res) {
                         if (res.code === 200) {
-                            let str = '<option value="">-请选择仓库-</option>';
+                            // 👇 关键：缓存到全局变量
+                            CURRENT_CUSTOMER_DEFAULT_GOODS = res.data;
+
+                            // 渲染到下拉框
+                            let str = "";
                             $.each(res.data, function (i, item) {
-                                str += `<option value="${item.id}">${item.name}</option>`;
+                                str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
                             });
-                            $('#warehouse_id').html(str).selectpicker('refresh');
+                            $select.html(str).selectpicker('refresh').selectpicker('render');
                         }
                     }
                 });
             });
 
-            // ===================== 【最终提交】整合所有数据 =====================
+
+            // 商品搜索（输入时触发）
+            $(document).on('shown.bs.select', '.goods_id', function () {
+                let $select = $(this).find("select[name='goods_id']");
+                let customer_id = $("#customer_id").val();
+
+                setTimeout(() => {
+                    $('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
+                }, 100);
+
+                // 监听搜索框输入事件
+                $('.bs-searchbox input').off('keyup').on('keyup', function () {
+                    GOODS_SEARCH_KEYWORD = $(this).val().trim();
+                    let keyword = $(this).val().trim();
+                    if (keyword === '') {
+                        let str = "";
+                        // 直接用全局缓存的200个
+                        $.each(CURRENT_CUSTOMER_DEFAULT_GOODS, function (i, item) {
+                            str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
+                        });
+                        $select.html(str).selectpicker('refresh').selectpicker('render');
+                        return;
+                    }
+
+                    // 关键词太短不搜索（避免频繁请求）
+                    if (keyword.length < 2) {
+                        return;
+                    }
+
+                    // AJAX 后端搜索商品
+                    $.ajax({
+                        url: "{{ route('admin.common.goods-search') }}",
+                        type: 'POST',
+                        data: {
+                            customer_id: customer_id,
+                            keyword: keyword,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function (res) {
+                            let html = '';
+                            $.each(res.data, function (i, item) {
+                                html += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
+                            });
+
+                            // 替换下拉内容
+                            $select.html(html).selectpicker('refresh');
+                            $select.selectpicker('render');
+                        }
+                    });
+                });
+            });
+
+            // 选择商品 → 加载颜色
+            $(document).on('change', '.goods_id', function () {
+                let goods_id = $(this).val();
+                let _this = $(this).parents('tr');
+                _this.find('.sku_id').html("<option>请选择</option>");
+                _this.find('.price').val('');
+                if (!goods_id) {
+                    return false;
+                }
+
+                // AJAX 获取 200 个默认商品
+                $.ajax({
+                    url: "{{ route('admin.common.sku-by-goods') }}",
+                    type: 'POST',
+                    data: { goods_id: goods_id, _token: "{{ csrf_token() }}" },
+                    success: function (res) {
+                        if (res.code === 200) {
+                            let thumb_image =  "{{ asset(':url') }}".replace(':url', res.data.goods.thumb_image);
+                            let main_image = "{{ asset(':url') }}".replace(':url', res.data.goods.main_image);
+                            _this.find('img').attr('src',thumb_image);
+                            _this.find('.thumb-img').data('src',main_image);
+                            let str = "<option>-请选择颜色-</option>";
+                            $.each(res.data.skus, function (i, item) {
+                                str += `<option value="${item.id}">${item.color}</option>`;
+                            });
+                            _this.find('.sku_id').html(str);
+                            _this.data('skuList', res.data.skus);
+                        }
+                    }
+                });
+            });
+
+            $(document).on('change', '.sku_id', function () {
+                let $sku = $(this);
+                let skuId = $sku.val();
+                let $tr = $sku.parents('tr');     // 当前行
+                let skuList = $tr.data('skuList'); // 取出之前存的SKUs
+
+                if (!skuId || !skuList) return;
+
+                // 找到对应SKU
+                let sku = skuList.find(item => item.id == skuId);
+
+                $tr.find('.price').val(sku.cost_price);         // 单价
+                //$tr.find('.process_price').val(sku.process_price); // 加工费
+                //$tr.find('.money').val(sku.price);         // 金额
+            });
+
+            // 表单验证
             $("#order").validate({
                 onsubmit: true,
                 rules: {
-                    department_id: {required:true},
-                    customer_id: {required:true},
-                    supplier_id: {required:true},
-                    season_id: {required:true},
-                    name: {required:true},
-                    customer_sku: {required:true},
-                    brand_logo: {required:true},
-                    category_pid: {required:true},
-                    category_id: {required:true},
-                    warehouse_id: {required:true},
+                    department_id: {required: true},
+                    customer_id: {required: true},
+                    supplier_company_id: {required: true},
+                    order_date: {required: true},
+                    delivery_date: {required: true},
                 },
                 messages: {
                     department_id: "请选择部门",
                     customer_id: "请选择客户",
-                    supplier_id: "请选择供应商",
-                    season_id: "请选择年份",
-                    name: "请填写产品名称",
-                    customer_sku: "请填写货号",
-                    brand_logo: "请填写LOGO",
-                    category_pid: "请选择一级类目",
-                    category_id: "请选择二级分类",
-                    warehouse_id: "请选择仓库",
+                    supplier_company_id: "请选择供应商",
+                    order_date: "请选订货日期",
+                    delivery_date: "请选交货日期",
                 },
-                submitHandler: function(form){
-                    $("#p_confirm").prop('disabled',true).text('提交中...');
+                submitHandler: function (form) {
+                    $("#p_confirm").prop('disabled', true).text('提交中...');
+                    $("#timg").removeClass("hidden");
 
-                    // 1. 收集基础表单数据
-                    let formData = $(form).serializeArray();
-                    let data = {};
-                    $.each(formData, function(){
-                        data[this.name] = this.value;
+                    let formData = new FormData();
+
+                    // 1. 追加表头信息
+                    formData.append('department_id', $("#department_id").val());
+                    formData.append('customer_id', $("#customer_id").val());
+                    formData.append('supplier_company_id', $("#supplier_company_id").val());
+                    formData.append('order_date', $("#order_date").val());
+                    formData.append('delivery_date', $("#delivery_date").val());
+                    formData.append('order_number', $("#order_number").text());
+                    formData.append('excel_id', $("#excel_id").val());
+                    formData.append('comment', $("#comment").val());
+
+                    $(".p_body tr").each(function (index) {
+                        let $tr = $(this);
+
+                        formData.append(`goods[${index}][goods_id]`,      $tr.find("[name='goods_id']").val());
+                        formData.append(`goods[${index}][sku_id]`,        $tr.find("[name='sku_id']").val());
+                        formData.append(`goods[${index}][color_card]`,    $tr.find("[name='color_card']").val());
+                        formData.append(`goods[${index}][number]`,        $tr.find("[name='number']").val());
+                        formData.append(`goods[${index}][currency_id]`,   $tr.find("[name='currency_id']").val());
+                        formData.append(`goods[${index}][price]`,         $tr.find("[name='price']").val());
+                        formData.append(`goods[${index}][money]`,         $tr.find("[name='money']").val());
+                        formData.append(`goods[${index}][remark]`,        $tr.find("[name='remark']").val());
+                        // formData.append(`goods[${index}][process_company_id]`,  $tr.find("[name='process_company_id']").val());
+                        // formData.append(`goods[${index}][process_price]`,       $tr.find("[name='process_price']").val());
+                        // formData.append(`goods[${index}][process_money]`,       $tr.find("[name='process_money']").val());
+                        // formData.append(`goods[${index}][process_company_id2]`, $tr.find("[name='process_company_id2']").val());
+                        // formData.append(`goods[${index}][process_price2]`,      $tr.find("[name='process_price2']").val());
+                        // formData.append(`goods[${index}][process_money2]`,      $tr.find("[name='process_money2']").val());
                     });
 
-                    // 2. 整合【成分数组】
-                    let components = [];
-                    $('#component_tbody .component_tr').each(function(){
-                        let component_id = $(this).find('select[name="component_id[]"]').val();
-                        let percent = $(this).find('input[name="component_percent[]"]').val();
-                        components.push({
-                            component_id: component_id,
-                            percent: percent
-                        });
-                    });
-                    data.components = components;
-
-                    // 3. 整合【颜色数组】
-                    let colors = [];
-                    $('#log_color .tr_spec').each(function(){
-                        let status = $(this).find('.status').val();
-                        let color = $(this).find('.color').val();
-                        let color_card = $(this).find('.color_card').val();
-                        let stock = $(this).find('.stock').val();
-                        let sell_currency_id = $(this).find('.sell_currency_id').val();
-                        let sell_price = $(this).find('.sell_price').val();
-                        let sell_price2 = $(this).find('.sell_price2').val();
-                        let cost_currency_id = $(this).find('.cost_currency_id').val();
-                        let cost_price = $(this).find('.cost_price').val();
-                        let cost_price2 = $(this).find('.cost_price2').val();
-                        let process_price = $(this).find('.process_price').val();
-                        let process_step2_price = $(this).find('.process_step2_price').val();
-
-                        colors.push({
-                            status: status,
-                            color: color,
-                            color_card: color_card,
-                            stock: stock,
-                            sell_currency_id: sell_currency_id,
-                            sell_price: sell_price,
-                            sell_price2: sell_price2,
-                            cost_currency_id: cost_currency_id,
-                            cost_price: cost_price,
-                            cost_price2: cost_price2,
-                            process_price: process_price,
-                            process_step2_price: process_step2_price
-                        });
-                    });
-                    data.colors = colors;
-
-                    // 4. 提交（路由：admin.goods.store）
+                    // 3. AJAX 提交（固定写法）
                     $.ajax({
-                        url: "{{ route('admin.goods.store') }}",
+                        url: "{{ route('admin.orders.store') }}",
                         type: "POST",
-                        data: data,
-                        dataType: "json",
+                        data: formData,
+                        contentType: false,
+                        processData: false,
                         headers: {
                             'X-CSRF-TOKEN': "{{ csrf_token() }}"
                         },
-                        success: function(res){
-                            alert(res.msg);
-                            if(res.code === 200){
-                                location.reload();
+                        dataType: "json",
+                        success: function (res) {
+                            if (res.code === 200) {
+                                $("#success").show();
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                alert(res.msg);
+                                $("#p_confirm").prop('disabled', false).text('提交');
+                                $("#timg").addClass("hidden");
                             }
-                            $("#p_confirm").prop('disabled',false).text('提交');
                         },
-                        error: function(){
-                            alert('提交失败');
-                            $("#p_confirm").prop('disabled',false).text('提交');
+                        error: function () {
+                            alert('提交失败，请重试');
+                            $("#p_confirm").prop('disabled', false).text('提交');
+                            $("#timg").addClass("hidden");
                         }
                     });
                 }
@@ -561,3 +583,4 @@
         });
     </script>
 @endsection
+@include('admin.order._——share')

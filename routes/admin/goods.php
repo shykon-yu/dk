@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Goods\GoodsComponentController;
 
 //季节
 Route::delete('goods/seasons/batch',[GoodsSeasonController::class,'batchDestroy'])->name('goods.seasons.batch.destroy');
+Route::post('goods/seasons/current/{season}',[GoodsSeasonController::class,'current'])->name('goods.seasons.current');
 Route::post('goods/seasons/status/{season}',[GoodsSeasonController::class,'status'])->name('goods.seasons.status');
 Route::resource('goods/seasons', GoodsSeasonController::class)->names('goods.seasons');
 

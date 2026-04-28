@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\GoodsRequest;
 use App\Models\Goods;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsCategoryService;
+use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\Order\OrderService;
 use App\Services\Admin\WarehouseService;
 use Illuminate\Http\Request;
@@ -33,7 +34,8 @@ class OrderController extends Controller
 
     public function create()
     {
-        return view('admin.goods.create');
+        $goods = app(GoodsService::class)->getCurrentGoodsList();
+        return view('admin.order.create', compact('goods'));
     }
 
     public function store(GoodsRequest $request )
@@ -134,7 +136,6 @@ class OrderController extends Controller
 
     public function star(Request $request , Goods $good)
     {
-//        dd($request->all());
         $request->validate(['star'=>['required','integer','between:0,1']]);
         try{
             $good = $this->goodsService->changeStar($good, $request->star);
@@ -147,30 +148,6 @@ class OrderController extends Controller
             return response()->json([
                 'code'=>500,
                 'msg'=>$e->getMessage(),
-            ]);
-        }
-    }
-
-    public function uploadImage(Request $request)
-    {
-        try {
-            $file = $request->file('file');
-            // 调用基类的上传方法，指定模块为goods
-            $uploadResult = $this->goodsService->uploadImage($file, 'goods');
-
-            return response()->json([
-                'code' => 200,
-                'msg' => '上传成功',
-                'data' => [
-                    'id' => $uploadResult['id'],
-                    'url' => $uploadResult['main_url'],
-                    'thumb_url' => $uploadResult['thumb_url']
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage()
             ]);
         }
     }

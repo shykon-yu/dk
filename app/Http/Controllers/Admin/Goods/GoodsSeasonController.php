@@ -131,4 +131,23 @@ class GoodsSeasonController extends Controller
             ]);
         }
     }
+
+    public function current(Request $request , GoodsSeason $season)
+    {
+        $request->validate(['current'=>['required','integer','between:0,1']]);
+        try{
+            $season = $this->goodsSeason->changeCurrent($season, $request->current);
+            return response()->json([
+                'code'=>200,
+                'is_current'=>$season->is_current,
+                'msg' => '当季修改成功',
+            ]);
+        }catch (\Exception $e){
+            return response()->json([
+                'code'=>500,
+                'msg'=>$e->getMessage(),
+            ]);
+        }
+    }
+
 }

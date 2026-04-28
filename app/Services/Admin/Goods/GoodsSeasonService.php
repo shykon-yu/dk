@@ -3,6 +3,7 @@ namespace App\Services\Admin\Goods;
 use App\Models\GoodsSeason;
 use App\Services\Admin\BaseService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Model;
 
 class GoodsSeasonService extends BaseService{
     public function __construct()
@@ -61,5 +62,17 @@ class GoodsSeasonService extends BaseService{
             ->orderBy('year', 'desc')
             ->orderBy('season', 'desc')
             ->get();
+    }
+
+    public function changeCurrent(Model $model, int $current)
+    {
+        try {
+            $model->is_current = $current;
+            $model->save();
+            $this->clearCache();
+            return $model;
+        } catch (\Exception $e) {
+            throw new \Exception($this->formatMsg('当季修改', $e->getMessage()));
+        }
     }
 }

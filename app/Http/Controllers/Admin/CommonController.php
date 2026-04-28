@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Warehouse;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsCategoryService;
+use App\Services\Admin\Goods\GoodsService;
+use App\Services\Admin\Goods\GoodsSkuService;
 use App\Services\Admin\ViewDataService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,5 +55,69 @@ class CommonController extends Controller
             'msg' => '获取成功',
             'data' => $children
         ]);
+    }
+
+    public function getGoodsSearch(Request $request)
+    {
+        $customer_id = $request->customer_id;
+        $keyword = $request->keyword;
+        $params = [
+            'customer_id' => $customer_id,
+            'keyword' => $keyword
+        ];
+        try{
+            $goods = app(GoodsService::class)->search($params);
+            return response()->json([
+                'code' => 200,
+                'data' => $goods
+            ]);
+        }catch (\Exception $e){
+            return response()->json([
+                'code' => 500,
+                'msg' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    //获取所选客户默认商品
+    public function getCustomerDefaultGoods(Request $request)
+    {
+        $customer_id = $request->customer_id;
+        $params = [
+            'customer_id' => $customer_id,
+        ];
+        try{
+            $goods = app(GoodsService::class)->search($params);
+            return response()->json([
+                'code' => 200,
+                'data' => $goods
+            ]);
+        }catch (\Exception $e){
+            return response()->json([
+                'code' => 500,
+                'msg' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    //通过商品获取sku
+    public function getSkuByGoods(Request $request)
+    {
+        try{
+            $goods = app(GoodsService::class)->getGoodsInfo($request->goods_id);
+            $skus = $goods->skus;
+            return response()->json([
+                'code' => 200,
+                'data' => [
+                    'goods' => $goods,
+                    'skus' => $skus
+                ]
+            ]);
+        }catch (\Exception $e){
+            return response()->json([
+                'code' => 500,
+                'msg' => $e->getMessage(),
+            ]);
+        }
     }
 }

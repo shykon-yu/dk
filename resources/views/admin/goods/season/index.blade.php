@@ -47,6 +47,7 @@
                     <th>年份</th>
                     <th>季节</th>
                     <th>状态</th>
+                    <th>当季</th>
                     <th>创建时间</th>
                     <th>操作</th>
                 </tr>
@@ -66,6 +67,13 @@
                                 <span class="label label-success">启用</span>
                             @else
                                 <span class="label label-default">禁用</span>
+                            @endif
+                        </td>
+                        <td class="change-current" style="cursor: pointer;" data-id="{{ $vo->id }}" data-current="{{ $vo->is_current }}">
+                            @if($vo->is_current == 1)
+                                <span class="label label-success">当季</span>
+                            @else
+                                <span class="label label-default">非当季</span>
                             @endif
                         </td>
                         <td>{{ $vo->created_at_date }}</td>
@@ -185,6 +193,44 @@
                     }
                 });
             });
+
+            // 切换当季状态
+            $("#season_list").on('click', ".change-current", function(){
+                let id = $(this).data("id");
+                let current = $(this).data("current");
+                let obj = $(this);
+
+                if(!confirm("确定要"+(current == 1 ? "取消当季" : "选择当季")+"吗？")) return false;
+
+                $.ajax({
+                    url: "{{ route('admin.goods.seasons.current','') }}/"+id,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        current: current == 1 ? 0 : 1
+                    },
+                    dataType: "json",
+                    success: function(data){
+                        if(data.code === 200){
+                            // 更新页面显示
+                            if(data.is_current == 1){
+                                obj.html('<span class="label label-success">当季</span>');
+                                obj.data('current', 1);
+                            }else{
+                                obj.html('<span class="label label-default">非当季</span>');
+                                obj.data('current', 0);
+                            }
+                            alert(data.msg);
+                        }else{
+                            alert(data.msg || '操作失败');
+                        }
+                    },
+                    error: function(xhr){
+                        alert(xhr.responseJSON?.msg || "操作失败");
+                    }
+                });
+            });
+
         });
 
         // 批量删除

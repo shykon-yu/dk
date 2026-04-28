@@ -16,6 +16,10 @@
 <script src="/js/jquery.fix.clone.js"></script>
 <script src="/js/tableFix.js"></script>
 
+
+<script src="/js/jquery.form.js"></script>
+<script src="/js/jquery.mousewheel.min.js"></script>
+
 <!-- 5. 页面自定义扩展 JS（最后加载） -->
 @yield('script_js')
 @yield('extends_js')

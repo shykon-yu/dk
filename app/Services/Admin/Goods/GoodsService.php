@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\Admin\Goods;
 use App\Models\GoodsSkuStock;
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Sku;
 use App\Services\Admin\BaseService;
 use Illuminate\Support\Collection;
@@ -41,11 +42,36 @@ class GoodsService extends BaseService{
     {
         return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
             return Goods::query()
-                ->select(['id', 'name'])
-                ->where('status', 1)
-                ->orderBy('sort', 'asc')
+                ->withoutGlobalScope(DepartmentScope::class)//缓存只存一个数据，所以取消部门限制，在viewData里做限制
+                ->select(['goods.id','goods.customer_sku','goods.name',
+                    'goods.main_image','goods.thumb_image',
+                    'goods.created_at','goods.updated_at'])
+                ->leftJoin('goods_seasons as gs', 'gs.id', '=', 'goods.season_id')
+                ->where('goods.status', 1)
+                ->orderBy('goods.is_star', 'desc')
+                ->orderBy('gs.year', 'desc')
+                ->orderBy('gs.season', 'desc')
+                ->orderBy('goods.status', 'desc')
+                ->with(['skus'])
                 ->get();
         });
+    }
+
+    //获取当季产品，前200，剩下的搜索出来
+    public function getCurrentGoodsList()
+    {
+        $data = $this->modelClass::query()
+                ->select(['goods.id','goods.customer_sku','goods.name',
+                    'goods.created_at','goods.updated_at'])
+            ->leftJoin('goods_seasons as gs', 'gs.id', '=', 'goods.season_id')
+            ->where('goods.status',1)
+            ->orderBy('goods.is_star', 'desc')
+            ->orderBy('gs.is_current', 'desc')
+            ->orderBy('gs.year', 'desc')
+            ->orderBy('gs.season', 'desc')
+            ->limit(200)
+            ->get();
+        return $data;
     }
 
     public function getGoodsList($params)
@@ -86,10 +112,10 @@ class GoodsService extends BaseService{
                 $q->whereIn('goods.is_star', $params['is_star']);
             })
             //->orderByRaw('gs.year desc, gs.season desc, goods.status desc, goods.sort asc')
+            ->orderBy('goods.is_star', 'desc')
             ->orderBy('gs.year', 'desc')
             ->orderBy('gs.season', 'desc')
             ->orderBy('goods.status', 'desc')
-//            ->orderBy('goods.sort', 'asc')
             ->with([
                 'customer:id,name',
                 'department:id,name',
@@ -290,5 +316,41 @@ class GoodsService extends BaseService{
             'stock' => $model->stock,
             'goods_id' => $model->goods_id,
         ];
+    }
+
+    // 商品搜索接口
+    public function search($params)
+    {
+        try {
+            $goods = Goods::query()
+                ->leftJoin('goods_seasons as gs', 'gs.id', '=', 'goods.season_id')
+                ->where('goods.customer_id', $params['customer_id'])
+                ->when(!empty($params['keyword']), function ($q) use ($params) {
+                    $q->where(function ($query) use ($params) {
+                        $query->where('goods.customer_sku', 'like', '%'.$params['keyword'].'%')
+                            ->orWhere('goods.name', 'like', '%'.$params['keyword'].'%');
+                    });
+                })
+                ->select(['goods.id', 'goods.customer_sku', 'goods.name']) // 只查需要的字段
+                ->orderBy('goods.is_star', 'desc')
+                ->orderBy('gs.is_current', 'desc')
+                ->orderBy('gs.year', 'desc')
+                ->orderBy('gs.season', 'desc')
+                ->limit(200)
+                ->get();
+            return $goods;
+        } catch (\Exception $e) {
+            throw new \Exception($this->formatMsg('获取失败', $e->getMessage()));
+        }
+    }
+
+    public function getGoodsInfo($goodsId)
+    {
+        try {
+            $goods = Goods::query()->find($goodsId);
+            return $goods;
+        } catch (\Exception $e) {
+            throw new \Exception($this->formatMsg('获取失败', $e->getMessage()));
+        }
     }
 }

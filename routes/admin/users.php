@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\Order\ClearanceController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\MenuController;
-use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Admin\ClearanceController;
-use App\Http\Controllers\Admin\PaymentController;
 
 //用户管理
 Route::delete('users/batch', [UserController::class, 'batchDestroy'])->name('users.batch.destroy');

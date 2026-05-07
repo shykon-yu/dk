@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Order extends Base
 {
     use SoftDeletes , FormatTimeTrait;
-    protected $fillable = ['department_id','customer_id','supplier_id','order_code','status','ordered_at','delivered_at','delivered_by',
-        'remark','is_star','status_remark','created_user_id','updated_user_id'];
+    protected $fillable = ['department_id','customer_id','supplier_id','order_code','status','excel_id','ordered_at','delivery_at',
+        'comment','is_star','status_remark','created_user_id','updated_user_id'];
     protected $dates = ['deleted_at'];
 
     static public function booted()
@@ -75,5 +75,10 @@ class Order extends Base
     public function suppliers()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function excel()
+    {
+        return $this->hasOne(OrderExcel::class);
     }
 }

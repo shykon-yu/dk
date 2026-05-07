@@ -40,18 +40,11 @@ class UserController extends Controller
 
     public function store(UserRequest $request)
     {
-        try {
-            $this->userService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '用户创建成功'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'msg' => '创建失败：' . $e->getMessage()
-            ]);
-        }
+        $this->userService->store($request->all());
+        return response()->json([
+            'code' => 200,
+            'msg' => '用户创建成功'
+        ]);
     }
 
     public function edit(User $user)
@@ -65,15 +58,8 @@ class UserController extends Controller
     public function update(UserRequest $request , User $user)
     {
         $this->authorize('update', $user);
-        try {
-            $this->userService->update($user , $request->all());
-
-            DB::commit();
-            return response()->json(['code' => 200, 'msg' => '用户编辑成功！']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['code' => 500, 'msg' => '编辑失败：' . $e->getMessage()]);
-        }
+        $this->userService->update($user , $request->all());
+        return response()->json(['code' => 200, 'msg' => '用户编辑成功！']);
     }
 
     public function show(User $user)
@@ -84,58 +70,31 @@ class UserController extends Controller
     public function destroy(User $user  )
     {
         $this->authorize('delete', $user);
-        try{
-            $this->userService->destroy($user);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->userService->destroy($user);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->userService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->userService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , User $user)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $department = $this->userService->changeStatus($user, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$user->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $user = $this->userService->changeStatus($user, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$user->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

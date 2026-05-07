@@ -34,18 +34,11 @@ class PaymentController extends Controller
 
     public function store( PaymentRequest $request )
     {
-        try{
-            $this->paymentService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->paymentService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(Payment $payment)
     {
@@ -54,74 +47,40 @@ class PaymentController extends Controller
 
     public function update(Payment $payment , PaymentRequest $request)
     {
-        try{
-            $this->paymentService->update($payment,$request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->paymentService->update($payment,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(Payment $payment)
     {
-        try{
-            $this->paymentService->destroy($payment);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->paymentService->destroy($payment);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->paymentService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->paymentService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , Payment $payment)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $payment = $this->paymentService->changeStatus($payment, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$payment->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $payment = $this->paymentService->changeStatus($payment, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$payment->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

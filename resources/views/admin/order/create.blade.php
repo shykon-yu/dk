@@ -36,7 +36,7 @@
                     <option value="">-请选择客户-</option>
                 </select>
 
-                <select name="supplier_company_id" id="supplier_company_id" class="selectpicker"
+                <select name="supplier_id" id="supplier_id" class="selectpicker"
                         data-live-search="true" data-live-search-placeholder="Search"
                         data-actions-box="true" title="请选择供应商">
                     @foreach($_suppliers as $vo)
@@ -45,17 +45,17 @@
                 </select>
 
                 <div class="input-group">
-                    <input class="form-control input-sm" name="order_date" id="order_date" autocomplete="off"
+                    <input class="form-control input-sm" name="ordered_at" id="ordered_at" autocomplete="off"
                            placeholder="订货日期" type="text">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
                 <div class="input-group">
-                    <input class="form-control input-sm" name="delivery_date" id="delivery_date" autocomplete="off"
+                    <input class="form-control input-sm" name="delivery_at" id="delivery_at" autocomplete="off"
                            placeholder="交货日期" type="text">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 
-                <span class="order">订单号：<span id="order_number"></span></span>
+                <span class="order">订单号：<span id="order_code"></span></span>
 
                 <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped"
                        style="margin-top:2em;">
@@ -103,9 +103,9 @@
                                     data-live-search="true"
                                     data-live-search-placeholder="输入货号/名称搜索"
                                     title="请选择产品">
-                                @foreach($goods as $good)
-                                    <option value="{{$good->id}}">{{$good->customer_sku}}</option>
-                                @endforeach
+{{--                                @foreach($goods as $good)--}}
+{{--                                    <option value="{{$good->id}}">{{$good->customer_sku}}</option>--}}
+{{--                                @endforeach--}}
 
                             </select>
                         </td>
@@ -256,13 +256,13 @@
         var GOODS_SEARCH_KEYWORD = '';
         $(function () {
             // 日期初始化
-            $("#order_date").datepicker({maxDate: 0});
-            $("#delivery_date").datepicker();
+            $("#ordered_at").datepicker({maxDate: 0});
+            $("#delivery_at").datepicker();
 
             // 订单号
             var u = new Date().getTime();
             var mi = Math.floor(Math.random() * 900 + 100);
-            $("#order_number").text("o" + u + mi);
+            $("#order_code").text("o" + u + mi);
 
             // 回车切换
             $(document).on("keyup", "input", function (e) {
@@ -275,12 +275,14 @@
             $(document).on("click", ".goods_plus", function () {
                 let _this_tr = $(this).parents("tr");
                 let main_image = _this_tr.find('.thumb-img').data('src');
+                let skulist = _this_tr.data('skuList');
                 let tr = _this_tr.clone();
                 _this_tr.after(tr);
                 _this_tr.next().find('.thumb-img').data('src',main_image);
+                _this_tr.next().data('skuList',skulist);
                 _this_tr.next().find('.bootstrap-select').find("button:first").remove();
                 _this_tr.next().find('.selectpicker').selectpicker("val");
-                _this_tr.next().find("input,select").not(".goods_id,.process_company_id,.process_company_id2,.currency_id").val("");
+                _this_tr.next().find("input,select").not(".goods_id,.sku_id,.process_company_id,.process_company_id2,.currency_id").val("");
                 _this_tr.next().find(".process_price,.process_price2,.number").val(0);
                 _this_tr.next().find(".money,.process_money,.process_money2").val(0);
                 _this_tr.next().find('.selectpicker').selectpicker('refresh');
@@ -499,22 +501,58 @@
                 //$tr.find('.money').val(sku.price);         // 金额
             });
 
+
+            $(document).on('change', '.upload_excel', function (e) {
+                let file = e.target.files[0];
+                if (!file) return;
+
+                let formData = new FormData();
+                formData.append('file', file);
+                formData.append('_token', "{{ csrf_token() }}");
+
+                // 上传中提示
+                $(".upload_label .text").text("上传中...");
+
+                $.ajax({
+                    url: "{{ route('admin.orders.upload.excel') }}",
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.code === 200) {
+                            $("#excel_id").val(res.data.id);
+                            $(".upload_label .text").text("已上传：" + res.data.name);
+                            alert("上传成功！");
+                        } else {
+                            alert(res.msg);
+                            $(".upload_label .text").text("重新上传");
+                        }
+                    },
+                    error: function () {
+                        alert("上传失败");
+                        $(".upload_label .text").text("重新上传");
+                    }
+                });
+            });
+
             // 表单验证
             $("#order").validate({
                 onsubmit: true,
                 rules: {
                     department_id: {required: true},
                     customer_id: {required: true},
-                    supplier_company_id: {required: true},
-                    order_date: {required: true},
-                    delivery_date: {required: true},
+                    supplier_id: {required: true},
+                    ordered_at: {required: true},
+                    delivery_at: {required: true},
                 },
                 messages: {
                     department_id: "请选择部门",
                     customer_id: "请选择客户",
-                    supplier_company_id: "请选择供应商",
-                    order_date: "请选订货日期",
-                    delivery_date: "请选交货日期",
+                    supplier_id: "请选择供应商",
+                    ordered_at: "请选订货日期",
+                    delivery_at: "请选交货日期",
                 },
                 submitHandler: function (form) {
                     $("#p_confirm").prop('disabled', true).text('提交中...');
@@ -525,10 +563,10 @@
                     // 1. 追加表头信息
                     formData.append('department_id', $("#department_id").val());
                     formData.append('customer_id', $("#customer_id").val());
-                    formData.append('supplier_company_id', $("#supplier_company_id").val());
-                    formData.append('order_date', $("#order_date").val());
-                    formData.append('delivery_date', $("#delivery_date").val());
-                    formData.append('order_number', $("#order_number").text());
+                    formData.append('supplier_id', $("#supplier_id").val());
+                    formData.append('ordered_at', $("#ordered_at").val());
+                    formData.append('delivery_at', $("#delivery_at").val());
+                    formData.append('order_code', $("#order_code").text());
                     formData.append('excel_id', $("#excel_id").val());
                     formData.append('comment', $("#comment").val());
 
@@ -572,8 +610,9 @@
                                 $("#timg").addClass("hidden");
                             }
                         },
-                        error: function () {
-                            alert('提交失败，请重试');
+                        error: function (res) {
+                            let msg = res.responseJSON?.msg || '系统异常，请稍后再试';
+                            alert(msg);
                             $("#p_confirm").prop('disabled', false).text('提交');
                             $("#timg").addClass("hidden");
                         }

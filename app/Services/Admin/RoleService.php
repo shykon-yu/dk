@@ -48,7 +48,7 @@ class RoleService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -69,30 +69,30 @@ class RoleService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
     public function batchDestroy(array $ids): bool
     {
         try {
+            if(empty($ids)){
+                throw new \Exception('请选择',400);
+            }
             $userHasRole = Auth::user()->roles()->pluck('id')->toArray();
 
             $deleteIds = collect($ids)->filter(function ($id) use ($userHasRole) {
                 if( in_array($id , $userHasRole) ){
                     throw new \Exception('不能删除自己角色');
-                    return false;
                 }
                 $role = Role::query()->find($id);
                 $currentLevel = Auth::user()->roles->sortBy('level')->first()?->level ?? 999;//当前最高层级
                 $targetLevel = $role->level;//目标层级
                 if( $currentLevel > $targetLevel ){
                     throw new \Exception('不能删除上级');
-                    return false;
                 }
                 if( $role->name == "管理员" ){
                     throw new \Exception('不能删除管理员');
-                    return false;
                 }
                 return true;
             });
@@ -100,7 +100,7 @@ class RoleService extends BaseService{
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('批量删除', $e->getMessage()));
+            throw new \Exception('批量删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

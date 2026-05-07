@@ -35,18 +35,11 @@ class WarehouseController extends Controller
 
     public function store( WarehouseRequest $request )
     {
-        try{
-            $this->warehouseService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->warehouseService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(Warehouse $warehouse)
     {
@@ -55,74 +48,40 @@ class WarehouseController extends Controller
 
     public function update(Warehouse $warehouse , WarehouseRequest $request)
     {
-        try{
-            $this->warehouseService->update($warehouse,$request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->warehouseService->update($warehouse,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(Warehouse $warehouse)
     {
-        try{
-            $this->warehouseService->destroy($warehouse);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->warehouseService->destroy($warehouse);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->warehouseService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->warehouseService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , Warehouse $warehouse)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $warehouse = $this->warehouseService->changeStatus($warehouse, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$warehouse->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $warehouse = $this->warehouseService->changeStatus($warehouse, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$warehouse->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

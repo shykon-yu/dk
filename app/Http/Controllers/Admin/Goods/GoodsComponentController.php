@@ -32,18 +32,11 @@ class GoodsComponentController extends Controller
 
     public function store(GoodsComponentRequest $request )
     {
-        try{
-            $this->goodsComponentService->store($request->only('name','name_en','name_kr','sort','status'));
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsComponentService->store($request->only('name','name_en','name_kr','sort','status'));
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(GoodsComponent $component)
     {
@@ -52,74 +45,40 @@ class GoodsComponentController extends Controller
 
     public function update(GoodsComponent $component , GoodsComponentRequest $request)
     {
-        try{
-            $this->goodsComponentService->update($component,$request->only('name','name_en','name_kr','sort','status'));
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsComponentService->update($component,$request->only('name','name_en','name_kr','sort','status'));
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(GoodsComponent $component)
     {
-        try{
-            $this->goodsComponentService->destroy($component);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsComponentService->destroy($component);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->goodsComponentService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsComponentService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , GoodsComponent $component)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $component = $this->goodsComponentService->changeStatus($component, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$component->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $component = $this->goodsComponentService->changeStatus($component, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$component->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

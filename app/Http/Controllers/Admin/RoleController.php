@@ -60,72 +60,38 @@ class RoleController extends Controller
 
     public function store(RoleRequest $request)
     {
-        try {
-            $this->roleService->store($request->validated());
-            return response()->json([
-                'code' => 200,
-                'msg' => '角色创建成功！',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'msg' => '创建失败：' . $e->getMessage(),
-            ]);
-        }
+        $this->roleService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '角色创建成功！',
+        ]);
     }
     public function update(RoleRequest $request , Role $role)
     {
-        try {
-            $this->roleService->update($role,$request->validated());
-            return response()->json([
-                'code' => 200,
-                'msg' => '角色更新成功！'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'msg' => '更新失败：' . $e->getMessage()
-            ]);
-        }
+        $this->roleService->update($role,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '角色更新成功！'
+        ]);
     }
 
     public function destroy(Role $role)
     {
         $this->authorize('delete', $role);
-        try{
-            $this->roleService->destroy($role);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->roleService->destroy($role);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->roleService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->roleService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 }

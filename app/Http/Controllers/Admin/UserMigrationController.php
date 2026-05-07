@@ -8,6 +8,8 @@ use App\Models\Goods;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use App\Models\Sku;
+use App\Models\Order;
+use App\Models\OrderExcel;
 
 class UserMigrationController extends Controller
 {
@@ -15,9 +17,39 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->updateStatus();
+        $this->migrateExcel();
     }
 
+
+    public function migrateExcel(){
+        $oldData = DB::table('dk_excel')
+            ->whereNotNull('order_number')
+            ->whereNot('order_number','')
+            ->get();
+        foreach( $oldData as $item ){
+            $orderData = Order::query()->where('order_code', $item->order_number)->first();
+            if( !$orderData ){
+                continue;
+            }
+            DB::beginTransaction();
+            try{
+                $data = [
+                    'order_id' => $orderData->id,
+                    'name' => $item->excel_name,
+                    'file_path' => $item->excel_url,
+                    'created_at' => $item->add_time_date,
+                    'updated_at' => $item->update_time_date,
+                ];
+//                dd($data);
+                $orderExcel = OrderExcel::create( $data );
+                $orderData->excel_id = $orderExcel->id;
+                $orderData->save();
+                DB::commit();
+            }catch (\Exception $e){
+                DB::rollBack();
+            }
+        }
+    }
     public function updateStatus(){
         DB::table("order_items")
             ->where('status', 1)

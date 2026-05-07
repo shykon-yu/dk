@@ -150,7 +150,7 @@ class MenuService extends BaseService
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -198,7 +198,7 @@ class MenuService extends BaseService
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 

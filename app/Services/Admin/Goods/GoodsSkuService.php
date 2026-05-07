@@ -21,12 +21,11 @@ class GoodsSkuService extends BaseService{
 
     public function getSkuByGoods($goodsId)
     {
-        dd($goodsId);
         try {
             $skus = [];
             return $skus;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('获取失败', $e->getMessage()));
+            throw new \Exception('获取失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

@@ -3,15 +3,12 @@
 namespace App\Http\Controllers\Admin\Order;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\GoodsRequest;
-use App\Models\Goods;
+use App\Http\Requests\Admin\OrderRequest;
+use App\Models\Order;
 use App\Services\Admin\CustomerService;
-use App\Services\Admin\Goods\GoodsCategoryService;
 use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\Order\OrderService;
-use App\Services\Admin\WarehouseService;
 use Illuminate\Http\Request;
-use App\Enums\OrderStatusEnum;
 
 class OrderController extends Controller
 {
@@ -34,121 +31,76 @@ class OrderController extends Controller
 
     public function create()
     {
-        $goods = app(GoodsService::class)->getCurrentGoodsList();
-        return view('admin.order.create', compact('goods'));
+        return view('admin.order.create');
     }
 
-    public function store(GoodsRequest $request )
+    public function store( OrderRequest $request )
     {
-        try{
-            $this->goodsService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->orderService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
-    public function edit(Goods $good)
+    public function edit(Order $order)
     {
-        $warehouses = app(WarehouseService::class)->getWarehouseByDepartmentId($good->department_id);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($good->department_id);
-        $categoryChildren = app(GoodsCategoryService::class)->getChildrenByParentId($good->category->parent_id);
-        return view('admin.goods.edit', compact('good','customers','warehouses','categoryChildren'));
+        $params = ['customer_id' => $order->customer_id,];
+        $goods = app(GoodsService::class)->search($params);
+        $customers = app(CustomerService::class)->getCustomerByDepartmentId($order->department_id);
+        return view('admin.order.edit', compact('order', 'customers', 'goods'));
     }
 
-    public function update(GoodsRequest $request, Goods $good)
+    public function update(OrderRequest $request, Order $order)
     {
-        try{
-            $this->goodsService->update($good,$request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->orderService->update($order,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
-    public function destroy(Goods $good)
+    public function destroy(Order $order)
     {
-        try{
-            $this->goodsService->destroy($good);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->orderService->destroy($order);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
-    public function batchDestroy(Request $request)
-    {
-        $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->goodsService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    public function status(Request $request , Goods $good)
+    public function status(Request $request , Order $order)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $good = $this->goodsService->changeStatus($good, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$good->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $order = $this->orderService->changeStatus($order, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$order->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 
-    public function star(Request $request , Goods $good)
+    public function star(Request $request , Order $order)
     {
         $request->validate(['star'=>['required','integer','between:0,1']]);
-        try{
-            $good = $this->goodsService->changeStar($good, $request->star);
-            return response()->json([
-                'code'=>200,
-                'star'=>$good->is_star,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $order = $this->orderService->changeStar($order, $request->star);
+        return response()->json([
+            'code'=>200,
+            'star'=>$order->is_star,
+            'msg' => '状态修改成功',
+        ]);
+    }
+
+    public function uploadExcel(Request $request)
+    {
+        $file = $request->file('file');
+        $uploadResult = $this->orderService->uploadExcel($file);
+        return response()->json([
+            'code' => 200,
+            'msg' => '上传成功',
+            'data' => [
+                'id' => $uploadResult['id'],
+                'name' => $uploadResult['name']
+            ]
+        ]);
     }
 }

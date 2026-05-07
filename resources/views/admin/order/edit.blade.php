@@ -1,40 +1,16 @@
 @extends('admin.layouts.app')
 
-@section('extends_js')
-    <script src="/js/jquery-ui-1.9.2.custom.js"></script>
-    <script src="/js/jquery.form.js"></script>
-    <script src="/js/jquery.mousewheel.min.js"></script>
-    <script src="/js/tableFix.js"></script>
-@endsection
-
 @section('extends_css')
     <link rel="stylesheet" href="/css/font-awesome.min.css">
-    <link rel="stylesheet" type="text/css" href="/ajaxupload/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/ajaxupload/css/style.css"/>
     <style>
-        /* 整体宽度 50% */
-        #dialog_radius {
-            width: 50% !important;
-            min-width: 500px;
-        }
-        .upload_label .upload_image {
-            height: 35px;
-        }
-        #dialog_radius td {
+        #log td {
             vertical-align: middle;
             text-align: center;
         }
-
-        /* 加减号按钮美化（横向并排） */
-        .btn-row {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-row .btn {
-            padding: 2px 8px !important;
-            font-size: 12px !important;
-            line-height: 1.2 !important;
+        .product_minus, .product_plus {
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 @endsection
@@ -43,473 +19,321 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span class="glyphicon glyphicon-pencil"></span>
-            <span class="panel-tit">产品编辑</span>
+            <span class="panel-tit">编辑订货</span>
         </div>
         <div class="panel-body navbar-form">
-            {{-- 隐藏ID字段，提交时传递产品ID --}}
-            <input type="hidden" name="id" id="goods_id" value="{{ $good->id }}">
-
             <form id="order" onkeydown="if(event.keyCode==13)return false;">
 
-                {{-- 顶部下拉 --}}
-                <select class="form-control input-sm" name="department_id" id="department_id" style="width:18%;display:inline-block;">
+                <select class="form-control input-sm" name="department_id" id="department_id" disabled>
                     <option value="">-请选择部门-</option>
-                    @foreach($_departments as $vo)
-                        <option value="{{ $vo->id }}" {{ $good->department_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                    @foreach($_departments_auth as $vo)
+                        <option value="{{ $vo->id }}" {{ $vo->id == $order->department_id ? 'selected' : '' }}>{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="customer_id" id="customer_id" style="width:18%;display:inline-block;">
+                <select class="form-control input-sm" name="customer_id" id="customer_id" disabled>
                     <option value="">-请选择客户-</option>
                     @foreach($customers as $vo)
-                    <option value="{{ $vo->id }}" {{ $good->customer_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                        <option value="{{ $vo->id }}" {{ $vo->id == $order->customer_id ? 'selected' : '' }}>{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select name="supplier_id" id="supplier_id" class="selectpicker" style="width:28%;display:inline-block;"
+                <select name="supplier_id" id="supplier_id" class="selectpicker"
                         data-live-search="true" data-live-search-placeholder="Search"
-                        data-actions-box="true" title="请选择默认供应商">
+                        data-actions-box="true" title="请选择供应商">
                     @foreach($_suppliers as $vo)
-                        <option value="{{ $vo->id }}" {{ $good->supplier_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                        <option value="{{ $vo->id }}" {{ $vo->id == $order->supplier_id ? 'selected' : '' }}>{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="season_id" id="season_id" style="width:28%;display:inline-block;">
-                    @foreach($_goods_seasons as $vo)
-                        <option value="{{ $vo->id }}" {{ $good->season_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                <div class="input-group">
+                    <input class="form-control input-sm" name="ordered_at" id="ordered_at" autocomplete="off"
+                           placeholder="订货日期" type="text" value="{{ $order->ordered_at ? \Carbon\Carbon::parse($order->ordered_at)->toDateString() : '' }}">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
+                <div class="input-group">
+                    <input class="form-control input-sm" name="delivery_at" id="delivery_at" autocomplete="off"
+                           placeholder="交货日期" type="text" value="{{ $order->delivery_at ? \Carbon\Carbon::parse($order->delivery_at)->toDateString() : '' }}">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
+
+                <span class="order">订单号：<span id="order_code">{{ $order->order_code }}</span></span>
+
+                <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped"
+                       style="margin-top:2em;">
+                    <thead>
+                    <tr>
+                        <th colspan="2">排头信息</th>
+                        <th colspan="4">产品信息</th>
+                        <th colspan="6">订单信息</th>
+                    </tr>
+                    <tr>
+                        <th>操作</th>
+                        <th>序号</th>
+                        <th>产品</th>
+                        <th>图片</th>
+                        <th>颜色</th>
+                        <th>色号</th>
+                        <th>数量</th>
+                        <th>货币</th>
+                        <th>单价</th>
+                        <th>金额</th>
+                        <th>备注</th>
+                    </tr>
+                    </thead>
+                    <tbody class="text-center p_body" id="log">
+
+                    {{-- 循环订单商品 --}}
+                    @foreach($order->items as $item)
+                        <tr>
+                            <td>
+                                <div class="btn-row">
+                                    <button type="button" class="btn btn-sm btn-danger goods_minus">-</button>
+                                    <button type="button" class="btn btn-sm btn-success goods_plus">+</button>
+                                </div>
+                            </td>
+                            <input type="hidden" name="id" class="item-id" value="{{ $item->id ?? '' }}">
+                            <td class="serial_number">{{ $loop->iteration }}</td>
+
+                            <td data-key="goods_id" class="padding_0 select_products">
+                                <select name="goods_id"
+                                        class="input_no_border form-control selectpicker goods_id"
+                                        data-live-search="true"
+                                        data-live-search-placeholder="输入货号/名称搜索"
+                                        title="请选择产品">
+
+                                    {{-- 1. 先判断：当前商品不在列表里 → 插到最前面并选中 --}}
+                                    @php
+                                        $currentGoodsId = $item->goods_id;
+                                        $existsInList = $goods->contains('id', $currentGoodsId);
+                                    @endphp
+
+                                    {{-- 不在列表里 → 优先显示在顶部 --}}
+                                    @if(!$existsInList)
+                                        <option value="{{ $item->goods_id }}" selected>
+                                            {{ $item->goods->customer_sku ?? '' }} {{ $item->goods->name ?? '' }}
+                                        </option>
+                                    @endif
+
+                                    {{-- 2. 循环正常200条商品 --}}
+                                    @foreach($goods as $good)
+                                        <option value="{{ $good->id }}" {{ $good->id == $currentGoodsId ? 'selected' : '' }}>
+                                            {{ $good->customer_sku }} {{ $good->name }}
+                                        </option>
+                                    @endforeach
+
+                                </select>
+                            </td>
+
+                            <td>
+                                <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; ">
+                                    <img height="20px" src="{{ $item->goods->thumb_image ? asset($item->goods->thumb_image) : '' }}"
+                                         class="thumb-img click-preview"
+                                         data-src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
+                                         style="width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
+                                    <img src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
+                                         class="hover-preview"
+                                         style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
+                                </div>
+                            </td>
+
+                            <td data-key="sku_id" class="padding_0">
+                                <select name="sku_id" class="form-control input_no_border input-sm sku_id">
+                                    <option value="">--请选择颜色--</option>
+                                    @foreach($item->goods->skus ?? [] as $sku)
+                                        <option value="{{ $sku->id }}" {{ $sku->id == $item->sku_id ? 'selected' : '' }}>
+                                            {{ $sku->color ?? '无颜色' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td data-key="color_card" class="padding_0">
+                                <input type="text" class="form-control input-sm input_no_border color_card"
+                                       name="color_card" value="{{ $item->color_card }}" placeholder="色号">
+                            </td>
+
+                            <td data-key="number" class="padding_0">
+                                <input type="text" class="form-control input_no_border input-sm number"
+                                       name="number" value="{{ $item->number }}" placeholder="数量">
+                            </td>
+
+                            <td data-key="currency_id" class="padding_0">
+                                <select class="form-control input_no_border input-sm currency_id" name="currency_id">
+                                    @foreach($_currencies as $vo)
+                                        <option value="{{ $vo->id }}" {{ $vo->id == $item->currency_id ? 'selected' : '' }}>
+                                            {{ $vo->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+
+                            <td data-key="price" class="padding_0">
+                                <input type="text" class="form-control input_no_border input-sm price"
+                                       name="price" value="{{ $item->price }}" placeholder="单价">
+                            </td>
+
+                            <td data-key="money" class="padding_0">
+                                <input type="text" class="form-control input_no_border input-sm money"
+                                       name="money" value="{{ $item->money }}" placeholder="金额">
+                            </td>
+
+                            <td data-key="remark" class="padding_0">
+                                <input type="text" class="form-control input_no_border input-sm remark"
+                                       name="remark" value="{{ $item->remark }}" placeholder="备注">
+                            </td>
+                        </tr>
                     @endforeach
-                </select>
-
-                <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped" style="margin-top:2em;">
-                    <tbody class="text-center p_body" id="major_log">
-
-                    <tr>
-                        <td>产品名称：</td>
-                        <td data-key="name" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" id="name" name="name" placeholder="请填写产品名称" value="{{ $good->name }}">
-                        </td>
-                    </tr>
-                    <tr><td></td></tr>
-
-                    <tr>
-                        <td>产品货号：</td>
-                        <td data-key="customer_sku" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" id="customer_sku" name="customer_sku" placeholder="请填写产品货号" value="{{ $good->customer_sku }}">
-                        </td>
-                    </tr>
-                    <tr><td></td></tr>
-
-                    <tr>
-                        <td>品牌LOGO：</td>
-                        <td data-key="brand_logo" class="padding_0 number">
-                            <input type="text" class="form-control input-sm input_no_border" name="brand_logo" placeholder="请填写品牌LOGO" value="{{ $good->brand_logo }}">
-                        </td>
-                    </tr>
-                    <tr><td></td></tr>
-
-                    {{-- ===================== 一级二级分类 同行 ===================== --}}
-                    <tr>
-                        <td>产品类目：</td>
-                        <td class="padding_0 number" style="display:flex;gap:5px;">
-                            <select name="category_pid" id="category_pid" class="form-control input-sm selectpicker"
-                                    data-live-search="true" title="一级类目" style="width:48%;">
-                                @foreach($_goods_categories as $vo)
-                                    <option value="{{ $vo->id }}" {{ $good->category->parent_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                @endforeach
-                            </select>
-                            <select name="category_id" id="category_id" class="form-control input-sm selectpicker"
-                                    data-live-search="true" title="二级分类" style="width:48%;">
-                                @foreach($categoryChildren as $vo)
-                                <option value="{{ $vo->id }}" {{ $good->category_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>仓库：</td>
-                        <td data-key="warehouse_id" class="padding_0 number">
-                            <select name="warehouse_id" id="warehouse_id"
-                                    class="form-control selectpicker" data-live-search="true"
-                                    data-live-search-placeholder="搜索" data-actions-box="true" title="请选择仓库">
-                                @foreach($warehouses as $vo)
-                                <option value="{{ $vo->id }}" {{ $good->warehouse_id == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>产品主图：</td>
-                        <td data-key="color_image_id" class="padding_0 number">
-                            <input type="hidden" name="main_image" id="main_image" value="{{ $good->main_image ?? '' }}">
-                            <input type="hidden" name="thumb_image" id="thumb_image" value="{{ $good->thumb_image ?? '' }}">
-                            {{-- 编辑页回显已上传的图片 --}}
-                            <img id="preview_img" style="float:left;display:inline-block" width="40px" src="{{ $good->main_image ? asset($good->main_image) : '' }}">
-                            <label class="upload_label">
-                                <input type="button" class="btn" value="重新上传">
-                                <span class="text"></span>
-                                <input type="file" id="upload_img" class="upload_image" accept="image/*">
-                            </label>
-                        </td>
-                    </tr>
-                    <tr><td></td></tr>
 
                     </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>操作</th>
+                        <th>序号</th>
+                        <th>产品</th>
+                        <th>图片</th>
+                        <th>颜色</th>
+                        <th>色号</th>
+                        <th>数量<br><span id="total_number"></span></th>
+                        <th>货币</th>
+                        <th>单价</th>
+                        <th>金额<br><span id="total_money"></span></th>
+                        <th>备注</th>
+                    </tr>
+                    <tr class="hidden" id="timg">
+                        <th colspan="18"><img src="/images/timg.gif"/>正在提交中...</th>
+                    </tr>
+                    </tfoot>
                 </table>
 
-                {{-- ===================== 产品成分（独立模块 + 百分比） ===================== --}}
-                <div style="width:50%;margin-top:30px;">
-                    <label style="font-weight:bold;">产品成分</label>
-                    <table class="table table-bordered table-condensed table-hover table-striped" style="margin:0;">
-                        <thead>
-                        <tr>
-                            <th>操作</th>
-                            <th>成分</th>
-                            <th>百分比(%)</th>
-                        </tr>
-                        </thead>
-                        <tbody id="component_tbody">
-                        {{-- 编辑页回显成分数据 --}}
-                        @if(!empty($good->components) && count($good->components) > 0)
-                            @foreach($good->components as $component)
-                                <tr class="component_tr">
-                                    <td>
-                                        <div class="btn-row">
-                                            <button type="button" class="btn btn-sm btn-danger component_minus">-</button>
-                                            <button type="button" class="btn btn-sm btn-success component_plus">+</button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <select name="component_id[]"  class="form-control input-sm selectpicker"
-                                                data-live-search="true" title="选择成分">
-                                            @foreach($_goods_components as $vo)
-                                                <option value="{{ $vo->id }}" {{ $component['id'] == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><input type="number" name="component_percent[]" class="form-control input-sm" placeholder="%" value="{{ format_decimal($component->pivot->percent) }}"></td>
-                                </tr>
-                            @endforeach
-                        @else
-                            {{-- 无数据时显示默认行 --}}
-                            <tr class="component_tr">
-                                <td>
-                                    <div class="btn-row">
-                                        <button type="button" class="btn btn-sm btn-danger component_minus">-</button>
-                                        <button type="button" class="btn btn-sm btn-success component_plus">+</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <select name="component_id[]"  class="form-control input-sm selectpicker"
-                                            data-live-search="true" title="选择成分">
-                                        @foreach($_goods_components as $vo)
-                                            <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td><input type="number" name="component_percent[]" class="form-control input-sm" placeholder="%" value="100"></td>
-                            </tr>
-                        @endif
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- ===================== 颜色分类 ===================== --}}
-                <div style="width:100%;margin-top:30px;">
-                    <label style="font-weight:bold;">颜色分类 <span style="color:red">***颜色库存生成后不能编辑，请去库存页面编辑，新增的颜色可以设置库存***</span></label>
-                    <table class="table table-bordered table-condensed table-hover table-striped" style="margin:0;">
-                        <thead>
-                        <tr>
-                            <th colspan="3">批量输入</th>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="color_card" placeholder="批量色号"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="stock" placeholder="批量库存"></td>
-
-                            <td>
-                                <select class="form-control input-sm batch_currency_sell">
-                                    <option value="">-售价货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="sell_price" placeholder="批量售价1"></td>
-
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="sell_price2" placeholder="批量售价2"></td>
-
-                            <td>
-                                <select class="form-control input-sm batch_currency_cost">
-                                    <option value="">-成本货币-</option>
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="cost_price" placeholder="批量进价1"></td>
-
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="cost_price2" placeholder="批量进价2"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="process_price" placeholder="批量辅材1"></td>
-                            <td><input type="text" class="form-control input-sm batch_all" data-target="process_step2_price" placeholder="批量辅材2"></td>
-                        </tr>
-                        <tr>
-                            <th>操作</th>
-                            <th>启用状态</th>
-                            <th>颜色名称</th>
-                            <th>色号</th>
-                            <th>库存</th>
-                            <th>售价货币</th>
-                            <th>售价1</th>
-                            <th>售价2</th>
-                            <th>成本货币</th>
-                            <th>进价1</th>
-                            <th>进价2</th>
-                            <th>辅材1</th>
-                            <th>辅材2</th>
-                        </tr>
-                        </thead>
-                        <tbody id="log_color">
-                        {{-- 编辑页回显颜色数据 --}}
-                        @if(!empty($good->skus) && count($good->skus) > 0)
-                            @foreach($good->skus as $sku)
-                                <tr class="tr_spec" id="{{$sku->id}}">
-                                    <td>
-                                        <div class="btn-row">
-                                            <button type="button" class="btn btn-sm btn-danger color_minus">-</button>
-                                            <button type="button" class="btn btn-sm btn-success color_plus">+</button>
-                                        </div>
-                                    </td>
-                                    <td data-key="id" class="hidden">
-                                        <input type="hidden" name="id[]" value="{{$sku->id}}">
-                                    </td>
-                                    <td data-key="status">
-                                        <select class="form-control input-sm status" name="status[]">
-                                            <option value="1" {{ $sku['status'] == 1 ? 'selected' : '' }}>启用</option>
-                                            <option value="0" {{ $sku['status'] == 0 ? 'selected' : '' }}>不启用</option>
-                                        </select>
-                                    </td>
-                                    <td data-key="color"><input type="text" class="form-control input-sm color" name="color[]" placeholder="颜色" value="{{ $sku['color'] }}"></td>
-                                    <td data-key="color_card"><input type="text" class="form-control input-sm color_card" name="color_card[]" value="{{ $sku['color_card'] }}"></td>
-                                    <td data-key="stock"><input type="text" class="form-control input-sm stock" name="stock[]" value="{{ $sku['stock'] }}"></td>
-
-                                    <td data-key="sell_currency_id">
-                                        <select class="form-control input-sm sell_currency_id" name="sell_currency_id[]">
-                                            <option value="">-售价货币-</option>
-                                            @foreach($_currencies as $vo)
-                                                <option value="{{ $vo->id }}" {{ $sku['sell_currency_id'] == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td data-key="sell_price"><input type="text" class="form-control input-sm sell_price" name="sell_price[]" value="{{ $sku['sell_price'] }}"></td>
-                                    <td data-key="sell_price2"><input type="text" class="form-control input-sm sell_price2" name="sell_price2[]" value="{{ $sku['sell_price2'] }}"></td>
-
-                                    <td data-key="cost_currency_id">
-                                        <select class="form-control input-sm cost_currency_id" name="cost_currency_id[]">
-                                            <option value="">-成本货币-</option>
-                                            @foreach($_currencies as $vo)
-                                                <option value="{{ $vo->id }}" {{ $sku['cost_currency_id'] == $vo->id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td data-key="cost_price"><input type="text" class="form-control input-sm cost_price" name="cost_price[]" value="{{ $sku['cost_price'] }}"></td>
-
-                                    <td data-key="cost_price2"><input type="text" class="form-control input-sm cost_price2" name="cost_price2[]" value="{{ $sku['cost_price2'] }}"></td>
-                                    <td data-key="process_price"><input type="text" class="form-control input-sm process_price" name="process_price[]" value="{{ $sku['process_price'] }}"></td>
-                                    <td data-key="process_step2_price"><input type="text" class="form-control input-sm process_step2_price" name="process_step2_price[]" value="{{ $sku['process_step2_price'] }}"></td>
-                                </tr>
-                            @endforeach
-                        @else
-                            {{-- 无数据时显示默认行 --}}
-                            <tr class="tr_spec">
-                                <td>
-                                    <div class="btn-row">
-                                        <button type="button" class="btn btn-sm btn-danger color_minus">-</button>
-                                        <button type="button" class="btn btn-sm btn-success color_plus">+</button>
-                                    </div>
-                                </td>
-                                <td data-key="status">
-                                    <select class="form-control input-sm status" name="status[]">
-                                        <option value="1">启用</option>
-                                        <option value="0">不启用</option>
-                                    </select>
-                                </td>
-                                <td data-key="color"><input type="text" class="form-control input-sm color" name="color[]" placeholder="颜色"></td>
-                                <td data-key="color_card"><input type="text" class="form-control input-sm color_card" name="color_card[]"></td>
-                                <td data-key="stock"><input type="text" class="form-control input-sm stock" name="stock[]" value="0"></td>
-
-                                <td data-key="sell_currency_id">
-                                    <select class="form-control input-sm sell_currency_id" name="sell_currency_id[]">
-                                        <option value="">-售价货币-</option>
-                                        @foreach($_currencies as $vo)
-                                            <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td data-key="sell_price"><input type="text" class="form-control input-sm sell_price" name="sell_price[]" value="0"></td>
-                                <td data-key="sell_price2"><input type="text" class="form-control input-sm sell_price2" name="sell_price2[]" value="0"></td>
-
-                                <td data-key="cost_currency_id">
-                                    <select class="form-control input-sm cost_currency_id" name="cost_currency_id[]">
-                                        <option value="">-成本货币-</option>
-                                        @foreach($_currencies as $vo)
-                                            <option value="{{ $vo->id }}">{{ $vo->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td data-key="cost_price"><input type="text" class="form-control input-sm cost_price" name="cost_price[]" value="0"></td>
-
-                                <td data-key="cost_price2"><input type="text" class="form-control input-sm cost_price2" name="cost_price2[]" value="0"></td>
-                                <td data-key="process_price"><input type="text" class="form-control input-sm process_price" name="process_price[]" value="0"></td>
-                                <td data-key="process_step2_price"><input type="text" class="form-control input-sm process_step2_price" name="process_step2_price[]" value="0"></td>
-                            </tr>
-                        @endif
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- 备注 --}}
-                <div style="width:50%;margin-top:20px;">
-                    <label style="font-weight:bold;">备注</label>
-                    <textarea class="form-control input-sm" id="remark" name="remark" placeholder="请填写备注"cols="80" rows="3">{{ $good->remark ?? '' }}</textarea>
-                </div>
-
-                {{-- 提交 --}}
-                <div style="width:50%;margin-top:20px;text-align:right;">
-                    <button class="btn btn-success" type="submit" id="p_confirm">提交修改</button>
-                </div>
-
+                <button class="btn btn-success pull-right" type="submit" id="p_confirm">保存</button>
             </form>
         </div>
+    </div>
 
+    <div class="form-group container">
+        <label for="comment">其他注意事项:</label>
+        <textarea class="form-control" rows="5" id="comment">{{ $order->comment }}</textarea>
+    </div>
+
+    <div id="success" class="text-center text-info" style="display:none;">
+        <div style="margin-top:1.5em"><span class="glyphicon glyphicon-ok"></span>&nbsp;&nbsp;保存成功</div>
+    </div>
+
+    <!-- 上传Excel -->
+    <div class="upload_main container" id="upload_file">
+        <h4 class="title">上传生产通知书</h4>
+        <input type="hidden" name="excel_id" id="excel_id" value="{{ $order->excel->id ?? 0 }}">
+        <label class="upload_label">
+            @if($order->excel)
+                <span class="text">已上传：{{ $order->excel->name }}</span>
+            @else
+                <span class="text">上传文件</span>
+            @endif
+            <input type="file" id="fileinp" class="upload_excel" accept="*">
+        </label>
     </div>
 @endsection
 
 @section('script_js')
     <script>
-        $(function(){
-            // ===================== 图片上传（编辑页兼容：重新上传覆盖原有路径） =====================
-            $(document).on('change', '#upload_img', function(){
-                let file = $(this)[0].files[0];
-                if (!file) return;
+        var ORDER_ID = {{ $order->id }};
+        var CURRENT_CUSTOMER_DEFAULT_GOODS = @json($goods ?? collect());
+        var GOODS_SEARCH_KEYWORD = '';
 
-                let formData = new FormData();
-                formData.append('file', file);
-                formData.append('_token', "{{ csrf_token() }}");
+        $(function () {
+            $("#ordered_at").datepicker({maxDate: 0});
+            $("#delivery_at").datepicker();
 
-                $.ajax({
-                    url: "{{ route('admin.goods.upload.image') }}",
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (res) {
-                        if (res.code === 200) {
-                            // 1. 覆盖原有主图/缩略图路径
-                            $('#main_image').val(res.data.url);
-                            $('#thumb_image').val(res.data.thumb_url);
+            // 计算合计
+            totalAll();
 
-                            // 2. 更新预览图
-                            let previewUrl = "{{ asset(':url') }}".replace(':url', res.data.url);
-                            $('#preview_img').attr('src', previewUrl);
+            // 加行 / 减行 / 计算 / 搜索 全部和添加页一样
+            // 下面 JS 完全复用你的添加页 JS
 
-                            alert('重新上传成功');
-                        } else {
-                            alert(res.msg ?? '上传失败');
-                        }
-                    },
-                    error: function () {
-                        alert('上传请求失败');
-                    }
-                });
-            });
-
-            // ===================== 一级分类 → 二级分类 AJAX（编辑页兼容） =====================
-            $(document).on('change', '#category_pid', function(){
-                let pid = $(this).val();
-                $('#category_id').html('<option value="">-选择二级分类-</option>').selectpicker('refresh');
-                if(!pid) return;
-
-                $.post("{{ route('admin.common.category-by-parent') }}", {
-                    pid: pid,
-                    _token: "{{ csrf_token() }}"
-                }, function(res){
-                    if (res.code !== 200) {
-                        alert(res.msg || '获取失败');
-                        return;
-                    }
-                    let html = '<option value="">-选择二级分类-</option>';
-                    if(res.data) {
-                        res.data.forEach(item => {
-                            html += `<option value="${item.id}">${item.name}</option>`;
-                        });
-                    }
-                    $('#category_id').html(html).selectpicker('refresh');
-                }, 'json').fail(function(){
-                    alert('服务器请求失败');
-                });
-            });
-
-            // ===================== 成分 加减（编辑页兼容） =====================
-            $(document).on('click', '.component_plus', function(){
-                let tr = $(this).closest('.component_tr').clone();
-                tr.find('.bootstrap-select').find('button:first').remove();
-                tr.find('.selectpicker').selectpicker('val', '');
-                tr.find('input[name="component_percent[]"]').val(0);
-                $('#component_tbody').append(tr);
-                tr.find('.selectpicker').selectpicker('refresh');
-                tr.find('.selectpicker').selectpicker('render');
-            });
-
-            $(document).on('click', '.component_minus', function(){
-                if($('#component_tbody .component_tr').length <=1){
-                    alert('至少保留一行成分');
-                    return false;
+            // 回车切换
+            $(document).on("keyup", "input", function (e) {
+                if (e.keyCode == 13) {
+                    $(this).parents("tr").next().find("input").select();
                 }
-                $(this).closest('.component_tr').remove();
             });
 
-            // ===================== 颜色 加减（编辑页兼容） =====================
-            $(document).on('click', '.color_plus', function(){
-                let tr = $(this).closest('.tr_spec').clone();
-                tr.attr('id','').find('input').not('.sell_price,.sell_price2,.cost_price,.cost_price2,.process_price,.process_step2_price').val('0');
-                tr.find('.color').val('');
-                $('#log_color').append(tr);
+            // 加行
+            $(document).on("click", ".goods_plus", function () {
+                let _this_tr = $(this).parents("tr");
+                let main_image = _this_tr.find('.thumb-img').data('src');
+                let skulist = _this_tr.data('skuList');
+                let tr = _this_tr.clone();
+                _this_tr.after(tr);
+                _this_tr.next().find('.thumb-img').data('src',main_image);
+                _this_tr.next().data('skuList',skulist);
+                _this_tr.next().find('.bootstrap-select').find("button:first").remove();
+                _this_tr.next().find('.selectpicker').selectpicker("val");
+                _this_tr.next().find("input,select").not(".goods_id,.sku_id,.process_company_id,.process_company_id2,.currency_id").val("");
+                _this_tr.next().find(".process_price,.process_price2,.number").val(0);
+                _this_tr.next().find(".money,.process_money,.process_money2").val(0);
+                _this_tr.next().find('.selectpicker').selectpicker('refresh');
+                _this_tr.next().find('.selectpicker').selectpicker('render');
+
+                setTimeout(() => {
+                    _this_tr.next().find('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
+                }, 100);
+                refreshSerial();
             });
-            $(document).on('click', '.color_minus', function(){
-                if($('#log_color .tr_spec').length <=1){
-                    alert('至少保留一行颜色'); return;
+
+            // 减行
+            $(document).on("click", ".goods_minus", function () {
+                if ($("#log tr").length <= 1) {
+                    alert("至少保留一行");
+                    return;
                 }
-                $(this).closest('.tr_spec').remove();
+                $(this).parents("tr").remove();
+                refreshSerial();
+                totalAll();
             });
 
-            // ===================== 批量输入（编辑页兼容） =====================
-            $(document).on('input', '.batch_all', function(){
-                let cls = $(this).data('target');
-                let val = $(this).val();
-                $('#log_color .'+cls).val(val);
+            function refreshSerial() {
+                $(".serial_number").each(function (i) {
+                    $(this).text(i + 1);
+                });
+            }
+
+            // 计算
+            $(document).on("input propertychange", ".p_body input", function () {
+                stereNum(this);
+                totalAll();
             });
 
-            // ===================== 批量货币（编辑页兼容） =====================
-            $(document).on('change', '.batch_currency_sell', function(){
-                let val = $(this).val();
-                $('.sell_currency_id').val(val);
-            });
-            $(document).on('change', '.batch_currency_cost', function(){
-                let val = $(this).val();
-                $('.cost_currency_id').val(val);
-            });
+            function stereNum(obj) {
+                let self = $(obj).parents("tr");
+                let price = parseFloat(self.find(".price").val() || 0);
+                let number = parseFloat(self.find(".number").val() || 0);
+                self.find(".money").val((price * number).toFixed(2));
+            }
 
-            // ===================== 部门切换 → 加载客户 + 仓库（编辑页兼容） =====================
+            // 合计
+            function totalAll() {
+                total("number", 0);
+                total("money", 2);
+            }
+
+            function total(t, n) {
+                let sum = 0;
+                $("." + t).each(function () {
+                    sum += parseFloat($(this).val() || 0);
+                });
+                $("#total_" + t).text(sum.toFixed(n));
+            }
+
+            // 部门→客户
             $(document).on('change', '#department_id', function () {
                 let department_id = $(this).val();
                 $('#customer_id').html('<option value="">-请选择客户-</option>');
-                $('#warehouse_id').html('').selectpicker('refresh');
                 if (!department_id) return;
 
-                // 客户
                 $.ajax({
                     url: "{{ route('admin.common.customer-by-dept') }}",
                     type: "POST",
-                    data: { _token: "{{ csrf_token() }}", department_id: department_id },
+                    data: {_token: "{{ csrf_token() }}", department_id: department_id},
                     dataType: "json",
                     success: function (res) {
                         if (res.code === 200) {
@@ -521,139 +345,225 @@
                         }
                     }
                 });
+            });
 
-                // 仓库
+            // 客户→商品
+            $(document).on('change', '#customer_id', function () {
+                let customer_id = $(this).val();
+                let $select = $("select[name='goods_id']");
+
+                if (!customer_id) {
+                    $select.html('').selectpicker('refresh');
+                    CURRENT_CUSTOMER_DEFAULT_GOODS = [];
+                    return;
+                }
+                GOODS_SEARCH_KEYWORD = '';
                 $.ajax({
-                    url: "{{ route('admin.common.warehouse-by-dept') }}",
-                    type: "POST",
-                    data: { _token: "{{ csrf_token() }}", department_id: department_id },
-                    dataType: "json",
+                    url: "{{ route('admin.common.customer-default-goods') }}",
+                    type: 'POST',
+                    data: { customer_id: customer_id, _token: "{{ csrf_token() }}" },
                     success: function (res) {
                         if (res.code === 200) {
-                            let str = '<option value="">-请选择仓库-</option>';
+                            CURRENT_CUSTOMER_DEFAULT_GOODS = res.data;
+                            let str = "";
                             $.each(res.data, function (i, item) {
-                                str += `<option value="${item.id}">${item.name}</option>`;
+                                str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
                             });
-                            $('#warehouse_id').html(str).selectpicker('refresh');
+                            $select.html(str).selectpicker('refresh').selectpicker('render');
                         }
                     }
                 });
             });
 
-            // ===================== 【最终提交】整合所有数据（编辑页：提交到update路由） =====================
+            // 商品搜索
+            $(document).on('shown.bs.select', '.goods_id', function () {
+                let $select = $(this).find("select[name='goods_id']");
+                let customer_id = $("#customer_id").val();
+
+                setTimeout(() => {
+                    $('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
+                }, 100);
+
+                $('.bs-searchbox input').off('keyup').on('keyup', function () {
+                    GOODS_SEARCH_KEYWORD = $(this).val().trim();
+                    let keyword = $(this).val().trim();
+                    if (keyword === '') {
+                        let str = "";
+                        $.each(CURRENT_CUSTOMER_DEFAULT_GOODS, function (i, item) {
+                            str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
+                        });
+                        $select.html(str).selectpicker('refresh').selectpicker('render');
+                        return;
+                    }
+                    if (keyword.length < 2) return;
+
+                    $.ajax({
+                        url: "{{ route('admin.common.goods-search') }}",
+                        type: 'POST',
+                        data: {
+                            customer_id: customer_id,
+                            keyword: keyword,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function (res) {
+                            let html = '';
+                            $.each(res.data, function (i, item) {
+                                html += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
+                            });
+                            $select.html(html).selectpicker('refresh');
+                            $select.selectpicker('render');
+                        }
+                    });
+                });
+            });
+
+            // 选择商品→加载SKU
+            $(document).on('change', '.goods_id', function () {
+                let goods_id = $(this).val();
+                let _this = $(this).parents('tr');
+                _this.find('.sku_id').html("<option>请选择</option>");
+                _this.find('.price').val('');
+                if (!goods_id) return false;
+
+                $.ajax({
+                    url: "{{ route('admin.common.sku-by-goods') }}",
+                    type: 'POST',
+                    data: { goods_id: goods_id, _token: "{{ csrf_token() }}" },
+                    success: function (res) {
+                        if (res.code === 200) {
+                            let thumb_image =  "{{ asset(':url') }}".replace(':url', res.data.goods.thumb_image);
+                            let main_image = "{{ asset(':url') }}".replace(':url', res.data.goods.main_image);
+                            _this.find('img').attr('src',thumb_image);
+                            _this.find('.thumb-img').data('src',main_image);
+                            let str = "<option>-请选择颜色-</option>";
+                            $.each(res.data.skus, function (i, item) {
+                                str += `<option value="${item.id}">${item.color}</option>`;
+                            });
+                            _this.find('.sku_id').html(str);
+                            _this.data('skuList', res.data.skus);
+                        }
+                    }
+                });
+            });
+
+            // 选择SKU→填价格
+            $(document).on('change', '.sku_id', function () {
+                let $sku = $(this);
+                let skuId = $sku.val();
+                let $tr = $sku.parents('tr');
+                let skuList = $tr.data('skuList');
+                if (!skuId || !skuList) return;
+                let sku = skuList.find(item => item.id == skuId);
+                $tr.find('.price').val(sku.cost_price);
+            });
+
+            // 上传Excel
+            $(document).on('change', '.upload_excel', function (e) {
+                let file = e.target.files[0];
+                if (!file) return;
+
+                let formData = new FormData();
+                formData.append('file', file);
+                formData.append('_token', "{{ csrf_token() }}");
+
+                $(".upload_label .text").text("上传中...");
+                $.ajax({
+                    url: "{{ route('admin.orders.upload.excel') }}",
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.code === 200) {
+                            $("#excel_id").val(res.data.id);
+                            $(".upload_label .text").text("已上传：" + res.data.name);
+                            alert("上传成功！");
+                        } else {
+                            alert(res.msg);
+                            $(".upload_label .text").text("重新上传");
+                        }
+                    },
+                    error: function () {
+                        alert("上传失败");
+                        $(".upload_label .text").text("重新上传");
+                    }
+                });
+            });
+
+            // 提交保存
             $("#order").validate({
                 onsubmit: true,
                 rules: {
-                    department_id: {required:true},
-                    customer_id: {required:true},
-                    supplier_id: {required:true},
-                    season_id: {required:true},
-                    name: {required:true},
-                    customer_sku: {required:true},
-                    brand_logo: {required:true},
-                    category_pid: {required:true},
-                    category_id: {required:true},
-                    warehouse_id: {required:true},
+                    department_id: {required: true},
+                    customer_id: {required: true},
+                    supplier_id: {required: true},
+                    ordered_at: {required: true},
+                    delivery_at: {required: true},
                 },
                 messages: {
                     department_id: "请选择部门",
                     customer_id: "请选择客户",
                     supplier_id: "请选择供应商",
-                    season_id: "请选择年份",
-                    name: "请填写产品名称",
-                    customer_sku: "请填写货号",
-                    brand_logo: "请填写LOGO",
-                    category_pid: "请选择一级类目",
-                    category_id: "请选择二级分类",
-                    warehouse_id: "请选择仓库",
+                    ordered_at: "请选订货日期",
+                    delivery_at: "请选交货日期",
                 },
-                submitHandler: function(form){
-                    $("#p_confirm").prop('disabled',true).text('提交中...');
+                submitHandler: function (form) {
+                    $("#p_confirm").prop('disabled', true).text('保存中...');
+                    $("#timg").removeClass("hidden");
 
-                    // 1. 收集基础表单数据（包含隐藏的产品ID）
-                    let formData = $(form).serializeArray();
-                    let data = {};
-                    $.each(formData, function(){
-                        data[this.name] = this.value;
+                    let formData = new FormData();
+                    formData.append('_method', 'PUT');
+                    formData.append('department_id', $("#department_id").val());
+                    formData.append('customer_id', $("#customer_id").val());
+                    formData.append('supplier_id', $("#supplier_id").val());
+                    formData.append('ordered_at', $("#ordered_at").val());
+                    formData.append('delivery_at', $("#delivery_at").val());
+                    formData.append('order_code', $("#order_code").text());
+                    formData.append('excel_id', $("#excel_id").val());
+                    formData.append('comment', $("#comment").val());
+
+                    $(".p_body tr").each(function (index) {
+                        let $tr = $(this);
+                        formData.append(`goods[${index}][id]`,          $tr.find(".item-id").val());
+                        formData.append(`goods[${index}][goods_id]`,      $tr.find("[name='goods_id']").val());
+                        formData.append(`goods[${index}][sku_id]`,        $tr.find("[name='sku_id']").val());
+                        formData.append(`goods[${index}][color_card]`,    $tr.find("[name='color_card']").val());
+                        formData.append(`goods[${index}][number]`,        $tr.find("[name='number']").val());
+                        formData.append(`goods[${index}][currency_id]`,   $tr.find("[name='currency_id']").val());
+                        formData.append(`goods[${index}][price]`,         $tr.find("[name='price']").val());
+                        formData.append(`goods[${index}][money]`,         $tr.find("[name='money']").val());
+                        formData.append(`goods[${index}][remark]`,        $tr.find("[name='remark']").val());
                     });
 
-                    // 2. 整合【成分数组】
-                    let components = [];
-                    $('#component_tbody .component_tr').each(function(){
-                        let component_id = $(this).find('select[name="component_id[]"]').val();
-                        let percent = $(this).find('input[name="component_percent[]"]').val();
-                        components.push({
-                            component_id: component_id,
-                            percent: percent
-                        });
-                    });
-                    data.components = components;
-
-                    // 3. 整合【颜色数组】
-                    let colors = [];
-                    $('#log_color .tr_spec').each(function(){
-                        let id = $(this).attr('id');
-                        let status = $(this).find('.status').val();
-                        let color = $(this).find('.color').val();
-                        let color_card = $(this).find('.color_card').val();
-                        let stock = $(this).find('.stock').val();
-                        let sell_currency_id = $(this).find('.sell_currency_id').val();
-                        let sell_price = $(this).find('.sell_price').val();
-                        let sell_price2 = $(this).find('.sell_price2').val();
-                        let cost_currency_id = $(this).find('.cost_currency_id').val();
-                        let cost_price = $(this).find('.cost_price').val();
-                        let cost_price2 = $(this).find('.cost_price2').val();
-                        let process_price = $(this).find('.process_price').val();
-                        let process_step2_price = $(this).find('.process_step2_price').val();
-
-                        colors.push({
-                            id: id,
-                            status: status,
-                            color: color,
-                            color_card: color_card,
-                            stock: stock,
-                            sell_currency_id: sell_currency_id,
-                            sell_price: sell_price,
-                            sell_price2: sell_price2,
-                            cost_currency_id: cost_currency_id,
-                            cost_price: cost_price,
-                            cost_price2: cost_price2,
-                            process_price: process_price,
-                            process_step2_price: process_step2_price
-                        });
-                    });
-                    data.colors = colors;
-
-                    // 4. 提交（编辑页：路由改为admin.goods.update，传递产品ID）
                     $.ajax({
-                        url: "{{ route('admin.goods.update', $good->id) }}",
-                        type: "POST", // Laravel PUT/PATCH需配合_method字段，这里用POST+_method
-                        data: {
-                            ...data,
-                            _method: 'PUT' // 模拟PUT请求
-                        },
+                        url: "{{ route('admin.orders.update', $order->id) }}",
+                        type: "POST",
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
                         dataType: "json",
-                        headers: {
-                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                        },
-                        success: function(res){
-                            alert(res.msg);
-                            if(res.code === 200){
-                                // 编辑成功后可返回列表页，或刷新当前页
-                                // location.href = "{{ route('admin.goods.index') }}";
-                                location.reload();
+                        success: function (res) {
+                            if (res.code === 200) {
+                                $("#success").show();
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                alert(res.msg);
+                                $("#p_confirm").prop('disabled', false).text('保存');
+                                $("#timg").addClass("hidden");
                             }
-                            $("#p_confirm").prop('disabled',false).text('提交修改');
                         },
-                        error: function(){
-                            alert('提交失败');
-                            $("#p_confirm").prop('disabled',false).text('提交修改');
+                        error: function () {
+                            alert('保存失败，请重试');
+                            $("#p_confirm").prop('disabled', false).text('保存');
+                            $("#timg").addClass("hidden");
                         }
                     });
                 }
             });
 
-            // ===================== 编辑页初始化：刷新所有selectpicker =====================
+            // 初始化刷新selectpicker
             $('.selectpicker').selectpicker('refresh');
         });
     </script>

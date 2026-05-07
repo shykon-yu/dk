@@ -72,7 +72,7 @@ class GoodsSeasonService extends BaseService{
             $this->clearCache();
             return $model;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('当季修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

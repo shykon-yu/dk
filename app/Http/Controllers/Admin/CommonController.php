@@ -65,18 +65,11 @@ class CommonController extends Controller
             'customer_id' => $customer_id,
             'keyword' => $keyword
         ];
-        try{
-            $goods = app(GoodsService::class)->search($params);
-            return response()->json([
-                'code' => 200,
-                'data' => $goods
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $goods = app(GoodsService::class)->search($params);
+        return response()->json([
+            'code' => 200,
+            'data' => $goods
+        ]);
     }
 
     //获取所选客户默认商品
@@ -86,38 +79,24 @@ class CommonController extends Controller
         $params = [
             'customer_id' => $customer_id,
         ];
-        try{
-            $goods = app(GoodsService::class)->search($params);
-            return response()->json([
-                'code' => 200,
-                'data' => $goods
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $goods = app(GoodsService::class)->search($params);
+        return response()->json([
+            'code' => 200,
+            'data' => $goods
+        ]);
     }
 
     //通过商品获取sku
     public function getSkuByGoods(Request $request)
     {
-        try{
-            $goods = app(GoodsService::class)->getGoodsInfo($request->goods_id);
-            $skus = $goods->skus;
-            return response()->json([
-                'code' => 200,
-                'data' => [
-                    'goods' => $goods,
-                    'skus' => $skus
-                ]
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $goods = app(GoodsService::class)->getGoodsInfo($request->goods_id);
+        $skus = $goods->skus;
+        return response()->json([
+            'code' => 200,
+            'data' => [
+                'goods' => $goods,
+                'skus' => $skus
+            ]
+        ]);
     }
 }

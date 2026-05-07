@@ -8,4 +8,5 @@ use App\Http\Controllers\Admin\Order\OrderController;
 //Route::resource('orders/inbounds', GoodsSeasonController::class)->names('goods.seasons');
 
 //订单
+Route::post('orders/upload/excel',[OrderController::class,'uploadExcel'])->name('orders.upload.excel');
 Route::resource('orders', OrderController::class);

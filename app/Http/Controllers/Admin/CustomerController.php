@@ -35,18 +35,11 @@ class CustomerController extends Controller
 
     public function store( DepartmentRequest $request )
     {
-        try{
-            $this->customerService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->customerService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(Customer $customer)
     {
@@ -55,74 +48,40 @@ class CustomerController extends Controller
 
     public function update(Customer $customer , CustomerRequest $request)
     {
-        try{
-            $this->customerService->update($customer,$request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->customerService->update($customer,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(Customer $customer)
     {
-        try{
-            $this->customerService->destroy($customer);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->customerService->destroy($customer);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->customerService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->customerService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , Customer $customer)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $customer = $this->customerService->changeStatus($customer, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$customer->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $customer = $this->customerService->changeStatus($customer, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$customer->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

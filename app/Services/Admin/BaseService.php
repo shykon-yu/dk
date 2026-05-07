@@ -4,11 +4,13 @@ namespace App\Services\Admin;
 use App\Services\Admin\Goods\GoodsSeasonService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Models\OrderExcel;
 
 abstract class BaseService
 {
@@ -26,6 +28,12 @@ abstract class BaseService
         'thumb_width'   => 800, // 缩略图宽度
     ];
 
+    protected array $uploadExcelConfig = [
+        'allowed_types' => ['xls', 'xlsx'], // 允许的图片类型
+        'max_size'      => 50 * 1024 * 1024, // 20MB
+        'base_dir'      => 'uploads/excel', // 基础存储目录
+    ];
+
     public function store(array $data): bool
     {
         try {
@@ -33,7 +41,7 @@ abstract class BaseService
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -44,7 +52,7 @@ abstract class BaseService
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -55,13 +63,16 @@ abstract class BaseService
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('删除', $e->getMessage()));
+            throw new \Exception('删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
     public function batchDestroy(array $ids): bool
     {
         try {
+            if(empty($ids)){
+                throw new \Exception('请选择', 400);
+            }
             $currentLevel = Auth::user()->roles->sortBy('level')->first()?->level ?? 999;
             if( $currentLevel > 1 ){
                 $datas = $this->getModelClass()::whereIn('id', $ids)->get();
@@ -79,7 +90,7 @@ abstract class BaseService
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('批量删除', $e->getMessage()));
+            throw new \Exception('批量删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -110,13 +121,6 @@ abstract class BaseService
         return $this->modelClass;
     }
 
-    // 统一异常消息格式化
-    protected function formatMsg(string $action, string $detail): string
-    {
-        $modelName = class_basename($this->modelClass);
-        return "{$action}{$modelName}失败：{$detail}";
-    }
-
     protected function getPerPage()
     {
         return (new $this->modelClass)->getPerPage();
@@ -144,7 +148,7 @@ abstract class BaseService
             $this->clearCache();
             return $model;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('状态修改', $e->getMessage()));
+            throw new \Exception('状态修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -156,7 +160,7 @@ abstract class BaseService
             $this->clearCache();
             return $model;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('星标修改', $e->getMessage()));
+            throw new \Exception('星标修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -183,8 +187,13 @@ abstract class BaseService
             $thumbAbsDir = public_path($thumbRelativeDir);
 
             // 3. 创建目录
-            File::makeDirectory($mainAbsDir, 0755, true, true);
-            File::makeDirectory($thumbAbsDir, 0755, true, true);
+            if (!file_exists($mainAbsDir)) {
+                File::makeDirectory($mainAbsDir, 0755, true, true);
+            }
+            if (!file_exists($thumbAbsDir)) {
+                File::makeDirectory($thumbAbsDir, 0755, true, true);
+            }
+
 
             // 4. 生成文件名（统一转jpg）
             $fileName = time() . rand(10000, 99999) . '.jpg';
@@ -210,7 +219,7 @@ abstract class BaseService
             ];
 
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('图片上传', $e->getMessage()));
+            throw new \Exception('图片上传失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -276,5 +285,59 @@ abstract class BaseService
             @unlink($file);
         }
         return true;
+    }
+
+    public function uploadExcel(UploadedFile $file): array
+    {
+        try{
+            $this->validateUploadExcel($file);
+            $fileName = $file->getClientOriginalName();
+
+            $date = date('Y-m-d');
+            $path = $this->uploadExcelConfig['base_dir'] . '/' . $date;
+            $absDir = public_path($path);
+
+            if (!file_exists($absDir)) {
+                File::makeDirectory($absDir, 0755, true, true);
+            }
+
+            $newName = uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move($absDir, $newName);
+            $savePath = $path . '/' . $newName;
+
+            $excel = OrderExcel::create([
+                'order_id'   => 0,
+                'name'       => $fileName,
+                'file_path'  => $savePath,
+            ]);
+
+            return [
+                'id' => $excel->id,
+                'name' => $excel->name,
+            ];
+        }catch (\Exception $e){
+            throw new \Exception('表格上传失败，'.$e->getMessage(), $e->getCode() ?: 500);
+        }
+
+    }
+
+    protected function validateUploadExcel(UploadedFile $file): void
+    {
+        if (!$file->isValid()) {
+            throw new \Exception('上传文件无效');
+        }
+
+        // 验证大小
+        if ($file->getSize() > $this->uploadExcelConfig['max_size']) {
+            $maxSize = $this->uploadExcelConfig['max_size'] / 1024 / 1024;
+            throw new \Exception("表格大小不能超过{$maxSize}MB");
+        }
+
+        // 验证类型
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!in_array($ext, $this->uploadExcelConfig['allowed_types'])) {
+            $types = implode(',', $this->uploadExcelConfig['allowed_types']);
+            throw new \Exception("只支持上传{$types}类型的表格");
+        }
     }
 }

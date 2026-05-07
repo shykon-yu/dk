@@ -43,8 +43,26 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
-        $this->reportable(function (Throwable $e) {
-            //
+//        $this->reportable(function (Throwable $e) {
+//            //
+//        });
+        $this->renderable(function (Throwable $e, $request) {
+            if ($request->is('api/*') || $request->ajax()) {
+
+                // 处理 Request 表单验证错误
+                if ($e instanceof ValidationException) {
+                    return response()->json([
+                        'code' => 422,
+                        'msg'  => $e->validator->errors()->first(),
+                    ], 422);
+                }
+
+                // 手动抛的异常
+                return response()->json([
+                    'code' => method_exists($e, 'getCode') && $e->getCode() ? $e->getCode() : 500,
+                    'msg'  => $e->getMessage(),
+                ]);
+            }
         });
     }
 }

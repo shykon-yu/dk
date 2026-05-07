@@ -74,17 +74,17 @@ class UserService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
     public function update(Model $model, array $data): bool
     {
-        if (filled($data['password'] ?? null)) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
-        }
         try {
+            if (filled($data['password'] ?? null)) {
+                $data['password'] = Hash::make($data['password']);
+            } else {
+                unset($data['password']);
+            }
             DB::beginTransaction();
             $model->update($data);
 
@@ -103,12 +103,15 @@ class UserService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
     public function batchDestroy(array $ids): bool
     {
         try {
+            if(empty($ids)){
+                throw new \Exception('请选择', 400);
+            }
             $userId = auth()->id();
             $deleteIds = collect($ids)->filter(function ($id) use ($userId) {
                 if ($id == $userId) {
@@ -125,7 +128,7 @@ class UserService extends BaseService{
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('批量删除', $e->getMessage()));
+            throw new \Exception('批量删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

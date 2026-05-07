@@ -165,7 +165,7 @@ class GoodsService extends BaseService{
 
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -243,7 +243,7 @@ class GoodsService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -259,13 +259,16 @@ class GoodsService extends BaseService{
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg($model->name.'删除', $e->getMessage()));
+            throw new \Exception('删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
     public function batchDestroy(array $ids): bool
     {
         try {
+            if(empty($ids)){
+                throw new \Exception('请选择', 400);
+            }
             foreach( $ids as $id ){
                 $goods = $this->getModelClass()::find($id);
                 if( $goods ){
@@ -275,7 +278,7 @@ class GoodsService extends BaseService{
             $this->clearCache();
             return true;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('批量删除', $e->getMessage()));
+            throw new \Exception('批量删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -340,7 +343,7 @@ class GoodsService extends BaseService{
                 ->get();
             return $goods;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('获取失败', $e->getMessage()));
+            throw new \Exception('获取失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -350,7 +353,7 @@ class GoodsService extends BaseService{
             $goods = Goods::query()->find($goodsId);
             return $goods;
         } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('获取失败', $e->getMessage()));
+            throw new \Exception('获取失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

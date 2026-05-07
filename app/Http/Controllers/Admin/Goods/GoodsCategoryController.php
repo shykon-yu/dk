@@ -34,18 +34,11 @@ class GoodsCategoryController extends Controller
     {
         $level = $request->input('parent_id')==0?1:2;
         $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
-        try{
-            $this->goodsCategoryService->store($data);
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsCategoryService->store($data);
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(GoodsCategory $category)
     {
@@ -57,74 +50,40 @@ class GoodsCategoryController extends Controller
     {
         $level = $request->input('parent_id')==0?1:2;
         $data = array_merge($request->only('name','parent_id','sort','status'), ['level' => $level]);
-        try{
-            $this->goodsCategoryService->update($category,$data);
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsCategoryService->update($category,$data);
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(GoodsCategory $category)
     {
-        try{
-            $this->goodsCategoryService->destroy($category);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsCategoryService->destroy($category);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->goodsCategoryService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsCategoryService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , GoodsCategory $category)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $category = $this->goodsCategoryService->changeStatus($category, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$category->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $category = $this->goodsCategoryService->changeStatus($category, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$category->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 }

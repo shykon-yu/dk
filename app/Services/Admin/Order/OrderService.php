@@ -1,6 +1,8 @@
 <?php
 namespace App\Services\Admin\Order;
 use App\Models\Order;
+use App\Models\OrderExcel;
+use App\Models\OrderItem;
 use App\Services\Admin\BaseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -58,128 +60,117 @@ class OrderService extends BaseService{
                 $q->whereIn('is_star', $params['is_star']);
             })
             ->orderBy('is_star', 'desc')
+            ->orderBy('created_at', 'desc')
             ->with([
                 'items','departments','customers','suppliers','creator','updater',
                 'items.goods','items.goodsSkus'
                 ])
             ->get();
-       // dd($data);
         return $this->paginateCacheData($data, $params,$this->getPerPage());
     }
 
     public function store(array $data):bool
     {
-        $data = $this->cleakkeys($data);//清洗数据
-        [$data,$componentArray,$colorArray] = $this->separateData($data);//分离数据
         try {
-            DB::beginTransaction();
-            // 保存商品
-            $goods = $this->getModelClass()::create($data);
-
-            // 同步成分
-            if (!empty($componentArray)) {
-                $syncData = $this->syncComponentsData($componentArray);
-                $goods->components()->sync($syncData);
+            //防止重复提交
+            $lockKey = "order:submit:" . $data['order_code'];
+            if (!Cache::add($lockKey, 'locked', 60)) {
+                throw new \Exception('请勿重复提交', 429);
             }
 
-            // 保存SKU（颜色）
-            if (!empty($colorArray)) {
-                //$insertColors = $this->dealColor($colorArray, $goods->id);
-                foreach( $colorArray as $color ) {
-                    $color['goods_id'] = $goods->id;
-                    $sku = Sku::create($color);
-                    //生成库存数据
-                    $stockData = $this->getStockArrayBySku($sku);
-                    $stockData['warehouse_id'] = $data['warehouse_id'];
-                    GoodsSkuStock::create($stockData);
+            DB::beginTransaction();
+            $items = $data['goods'];
+            unset($data['goods']);
+            $order = $this->getModelClass()::create($data);
+
+            // 保存子单
+            if (!empty($items)) {
+                foreach( $items as $item ) {
+                    unset($item['money']);
+                    $item['order_id'] = $order->id;
+                    OrderItem::create($item);
                 }
             }
+            //如果excel_id不是0，修改excel表的order_id数据，后期定时计划清理没有order_id的数据
+            if( $data['excel_id'] != 0 ){
+                $orderExcel = OrderExcel::query()->where('id',$data['excel_id'])->first();
+                if(!empty($orderExcel)) $orderExcel->update(['order_id' => $order->id]);
+            }
 
-            $this->clearCache();
             DB::commit();
             return true;
 
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('新增', $e->getMessage()));
+            throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
     public function update(Model $model , array $data):bool
     {
-        $data = $this->cleakkeys($data);//清洗数据
-        [$data,$componentArray,$colorArray] = $this->separateData($data);//分离数据
+        $items = $data['goods'];
+        unset($data['goods']);
+        unset($data['department_id'],$data['customer_id'],$data['order_code']);
         try {
             DB::beginTransaction();
-            //如果图片地址发生变化，记录旧地址以便删除
-            if( $model->main_image != $data['main_image'] ){
-                $mainImagePath = $model->main_image;
-                $thumbImagePath = $model->thumb_image;
-            }else{
-                $mainImagePath = null;
-                $thumbImagePath = null;
+            if( $model->excel_id != 0 && $model->excel_id != $data['excel_id'] ){
+                $model->excel()->delete();
             }
-
-            //修改商品数据
             $model->update($data);
 
-            // 同步成分
-            if (!empty($componentArray)) {
-                $syncData = $this->syncComponentsData($componentArray);
-                $model->components()->sync($syncData);
-            }
-
-            //处理颜色
-            if( !empty($colorArray) ) {
-                $updateColors = [];//编辑数据
-                $deleteColors = [];//删除数据
-                $oldColors = $model->skus->toArray();//旧数据
+            //处理子单
+            if( !empty($items) ) {
+                $updates = [];//编辑数据
+                $deletes = [];//删除数据
+                $oldDatas = $model->items->toArray();//旧数据
                 /**
                  * 遍历新数组和旧数据，对比id,有id将两个数组的这个id都删除
                  * 最后新数据剩余的就是新增数据，旧数据剩余的就是需要删除的数据
                  */
-                foreach( $oldColors as $oldCol => $oldVal ){
-                    foreach( $colorArray as $newCol => $newVal ){
-                        if( $oldVal['id'] == $newVal['id'] ){
-                            unset($newVal['stock']);//不能在商品编辑页面修改库存
-                            $updateColors[] = $newVal;
-                            unset($oldColors[$oldCol]);
-                            unset($colorArray[$newCol]);
+                foreach( $oldDatas as $oldKey => $old ){
+                    foreach( $items as $itemKey => $item ){
+                        if( $old['id'] == $item['id'] ){
+                            $updates[] = $item;
+                            unset($oldDatas[$oldKey]);
+                            unset($items[$itemKey]);
                         }
                     }
                 }
-                //新增颜色数据
-                foreach( $colorArray as $newCol => $newVal ){
-                    unset($newVal['id']);
-                    $newVal['goods_id'] = $model->id;
-                    $sku = Sku::create($newVal);
-                    //生成库存数据
-                    $stockData = $this->getStockArrayBySku($sku);
-                    $stockData['warehouse_id'] = $data['warehouse_id'];
-                    GoodsSkuStock::create($stockData);
-                }
-                //dd($updateColors);
-                //编辑颜色数据
-                foreach( $updateColors as $updateCol => $updateVal ){
-                    Sku::where('id',$updateVal['id'])->update($updateVal);
+
+                //新增子单数据
+                if(!empty($items)){
+                    foreach( $items as $item ) {
+                        unset($item['id']);
+                        unset($item['money']);
+                        $item['order_id'] = $model->id;
+                        OrderItem::create($item);
+                    }
                 }
 
-                //删除颜色数据
-                foreach( $oldColors as $oldCol => $oldVal ){
-                    $deleteColors[] = $oldVal['id'];
+                //编辑数据
+                if( !empty($updates) ){
+                    foreach( $updates as $update ){
+                        unset($update['money']);
+                        OrderItem::where('id',$update['id'])->update($update);
+                    }
                 }
-                Sku::destroy($deleteColors);
+
+                //删除数据
+                foreach( $oldDatas as $old ){
+                    $deletes[] = $old['id'];
+                }
+                if(!empty($deletes))  OrderItem::destroy($deletes);
             }
-            $this->clearCache();
+
+            if( $data['excel_id'] != 0 ){
+                $orderExcel = OrderExcel::query()->where('id',$data['excel_id'])->first();
+                if(!empty($orderExcel)) $orderExcel->update(['order_id' => $model->id]);
+            }
             DB::commit();
-            if( !is_null($mainImagePath) ){
-                $this->unlinkImage($mainImagePath);
-                $this->unlinkImage($thumbImagePath);
-            }
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg('修改', $e->getMessage()));
+            throw new \Exception('修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -188,69 +179,11 @@ class OrderService extends BaseService{
         try {
             DB::beginTransaction();
             $model->delete();
-            $model->skus()->delete();
-            //$model->stocks()->delete();
-            $this->clearCache();
             DB::commit();
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception($this->formatMsg($model->name.'删除', $e->getMessage()));
+            throw new \Exception('删除失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
-    }
-
-    public function batchDestroy(array $ids): bool
-    {
-        try {
-            foreach( $ids as $id ){
-                $goods = $this->getModelClass()::find($id);
-                if( $goods ){
-                    $this->destroy($goods);
-                }
-            }
-            $this->clearCache();
-            return true;
-        } catch (\Exception $e) {
-            throw new \Exception($this->formatMsg('批量删除', $e->getMessage()));
-        }
-    }
-
-    //分离数据
-    public function separateData(array $data):array
-    {
-        // 取出成分/颜色并从主数据移除
-        $componentArray = $data['components'] ?? [];
-        $colorArray     = $data['colors'] ?? [];
-        unset($data['components'], $data['colors']);
-        return [$data, $componentArray, $colorArray];
-    }
-    //清洗数据
-    public function cleakkeys($data){
-        foreach ($this->cleanKeys as $key) {
-            if(isset($data[$key])){
-                unset($data[$key]);
-            }
-        }
-        return $data;
-    }
-
-    //同步成分格式
-    public function syncComponentsData(array $data):array
-    {
-        $syncData = collect($data)->mapWithKeys(function ($item) {
-            return [
-                $item['component_id'] => ['percent' => $item['percent']]
-            ];
-        })->all();
-        return $syncData;
-    }
-
-    public function getStockArrayBySku(Model $model):array
-    {
-        return [
-            'sku_id' => $model->id,
-            'stock' => $model->stock,
-            'goods_id' => $model->goods_id,
-        ];
     }
 }

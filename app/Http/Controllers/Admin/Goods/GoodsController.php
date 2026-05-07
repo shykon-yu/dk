@@ -38,18 +38,11 @@ class GoodsController extends Controller
 
     public function store(GoodsRequest $request )
     {
-        try{
-            $this->goodsService->store($request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '新增成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsService->store($request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '新增成功',
+        ]);
     }
     public function edit(Goods $good)
     {
@@ -61,117 +54,67 @@ class GoodsController extends Controller
 
     public function update(GoodsRequest $request, Goods $good)
     {
-        try{
-            $this->goodsService->update($good,$request->all());
-            return response()->json([
-                'code' => 200,
-                'msg' => '修改成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsService->update($good,$request->validated());
+        return response()->json([
+            'code' => 200,
+            'msg' => '修改成功'
+        ]);
     }
 
     public function destroy(Goods $good)
     {
-        try{
-            $this->goodsService->destroy($good);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsService->destroy($good);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功',
+        ]);
     }
 
     public function batchDestroy(Request $request)
     {
         $ids = $request->input('ids',[]);
-        if(empty($ids)){
-            return response()->json([
-                'code' => 400,
-                'msg' => '请选择',
-            ]);
-        }
-        try{
-            $this->goodsService->batchDestroy($ids);
-            return response()->json([
-                'code' => 200,
-                'msg' => '删除成功'
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage(),
-            ]);
-        }
+        $this->goodsService->batchDestroy($ids);
+        return response()->json([
+            'code' => 200,
+            'msg' => '删除成功'
+        ]);
     }
 
     public function status(Request $request , Goods $good)
     {
         $request->validate(['status'=>['required','integer','between:0,1']]);
-        try{
-            $good = $this->goodsService->changeStatus($good, $request->status);
-            return response()->json([
-                'code'=>200,
-                'status'=>$good->status,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $good = $this->goodsService->changeStatus($good, $request->status);
+        return response()->json([
+            'code'=>200,
+            'status'=>$good->status,
+            'msg' => '状态修改成功',
+        ]);
     }
 
     public function star(Request $request , Goods $good)
     {
-//        dd($request->all());
         $request->validate(['star'=>['required','integer','between:0,1']]);
-        try{
-            $good = $this->goodsService->changeStar($good, $request->star);
-            return response()->json([
-                'code'=>200,
-                'star'=>$good->is_star,
-                'msg' => '状态修改成功',
-            ]);
-        }catch (\Exception $e){
-            return response()->json([
-                'code'=>500,
-                'msg'=>$e->getMessage(),
-            ]);
-        }
+        $good = $this->goodsService->changeStar($good, $request->star);
+        return response()->json([
+            'code'=>200,
+            'star'=>$good->is_star,
+            'msg' => '状态修改成功',
+        ]);
     }
 
     public function uploadImage(Request $request)
     {
-        try {
-            $file = $request->file('file');
-            // 调用基类的上传方法，指定模块为goods
-            $uploadResult = $this->goodsService->uploadImage($file, 'goods');
+        $file = $request->file('file');
+        $uploadResult = $this->goodsService->uploadImage($file, 'goods');
 
-            return response()->json([
-                'code' => 200,
-                'msg' => '上传成功',
-                'data' => [
-                    'id' => $uploadResult['id'],
-                    'url' => $uploadResult['main_url'],
-                    'thumb_url' => $uploadResult['thumb_url']
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'msg' => $e->getMessage()
-            ]);
-        }
+        return response()->json([
+            'code' => 200,
+            'msg' => '上传成功',
+            'data' => [
+                'id' => $uploadResult['id'],
+                'url' => $uploadResult['main_url'],
+                'thumb_url' => $uploadResult['thumb_url']
+            ]
+        ]);
     }
 }

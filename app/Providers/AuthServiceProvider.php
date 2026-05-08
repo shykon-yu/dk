@@ -28,7 +28,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         Gate::before(function ($user, $ability) {
-            if ($user->id === 1) {
+            if ($user->id === 1 && $ability !== 'update' && $ability !== 'delete') {
                 return true;
             }
         });

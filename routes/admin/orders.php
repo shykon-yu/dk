@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\Admin\Order\OrderController;
-
-//入库
-//Route::delete('orders/inbounds/batch',[GoodsSeasonController::class,'batchDestroy'])->name('goods.seasons.batch.destroy');
-//Route::post('orders/inbounds/status/{inbound}',[GoodsSeasonController::class,'status'])->name('goods.seasons.status');
-//Route::resource('orders/inbounds', GoodsSeasonController::class)->names('goods.seasons');
+use App\Http\Controllers\Admin\Order\InboundController;
 
 //订单
+Route::post('orders/star/{order}',[OrderController::class,'star'])->name('orders.star');
+Route::post('orders/status/{order}',[OrderController::class,'status'])->name('orders.status');
+Route::get('orders/reorder/{order}',[OrderController::class,'reorder'])->name('orders.reorder');
 Route::post('orders/upload/excel',[OrderController::class,'uploadExcel'])->name('orders.upload.excel');
+Route::get('orders/items',[OrderController::class,'items'])->name('orders.items');
 Route::resource('orders', OrderController::class);
+
+//入库
+Route::get('inbounds/items',[InboundController::class,'items'])->name('inbounds.items');
+Route::resource('inbounds', InboundController::class);

@@ -14,6 +14,12 @@ class OrderItem extends Model
     protected $fillable = ['order_id','goods_id','sku_id','color_card','number','received_quantity','unit_id',
         'currency_id','price','status'];
     protected $dates = ['deleted_at'];
+
+    public function getMoneyAttribute()
+    {
+        return bcmul($this->number,$this->price,2);
+    }
+
     public function order()
     {
         return $this->belongsTo(Order::class);

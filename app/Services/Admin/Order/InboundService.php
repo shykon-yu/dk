@@ -1,19 +1,16 @@
 <?php
 namespace App\Services\Admin\Order;
-use App\Models\Order;
-use App\Models\OrderExcel;
-use App\Models\OrderItem;
+use App\Models\Inbound;
 use App\Services\Admin\BaseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
-use App\Enums\OrderStatusEnum;
 
-class OrderService extends BaseService{
+class InboundService extends BaseService{
     public function __construct()
     {
-        $this->modelClass = Order::class;
-        $this->cacheKey = 'orders_all';
+        $this->modelClass = Inbound::class;
+        $this->cacheKey = 'inbounds_all';
     }
 
     public function getCacheAll()
@@ -27,44 +24,49 @@ class OrderService extends BaseService{
         });
     }
 
-    public function getOrdersList($params)
+    public function getInboundsList($params)
     {
         $data = $this->modelClass::query()
+            ->when(!empty($params['inbound_code']), function ($q) use ($params) {
+                $q->where('inbound_code', 'like', '%' . trim($params['inbound_code']) . '%');
+            })
             ->when(!empty($params['order_code']), function ($q) use ($params) {
-                $q->where('order_code', 'like', '%' . trim($params['order_code']) . '%');
-            })
-            ->when(!empty($params['goods_name']), function ($q) use ($params) {
-                $q->whereHas('items.goods', function ($qq) use ($params) {
-                    $qq->where('name', 'like', '%' . trim($params['goods_name']) . '%');
+                $q->whereHas('items.orderItem.order', function ($qq) use ($params) {
+                    $qq->where('order_code', 'like', '%' . trim($params['order_code']) . '%');
                 });
             })
-            ->when(!empty($params['customer_sku']), function ($q) use ($params) {
-                $q->whereHas('items.goods', function ($qq) use ($params) {
-                    $qq->where('customer_sku', 'like', '%' . trim($params['customer_sku']) . '%');
-                });
-            })
-            ->when(!empty($params['department_ids']), function ($q) use ($params) {
-                $q->whereIn('department_id', $params['department_ids']);
-            })
-            ->when(!empty($params['customer_ids']), function ($q) use ($params) {
-                $q->whereIn('customer_id', $params['customer_ids']);
-            })
-            ->when(!empty($params['supplier_ids']), function ($q) use ($params) {
-                $q->whereIn('supplier_id', $params['supplier_ids']);
-            })
-            ->when(!empty($params['status']), function ($q) use ($params) {
-                $q->whereIn('status', $params['status']);
-            }, function ($q) {
-                $q->whereIn('status', [0,1,2]);
-            })
-            ->when(!empty($params['is_star']), function ($q) use ($params) {
-                $q->whereIn('is_star', $params['is_star']);
-            })
-            ->orderBy('is_star', 'desc')
-            ->orderBy('created_at', 'desc')
+//            ->when(!empty($params['goods_name']), function ($q) use ($params) {
+//                $q->whereHas('items.goods', function ($qq) use ($params) {
+//                    $qq->where('name', 'like', '%' . trim($params['goods_name']) . '%');
+//                });
+//            })
+//            ->when(!empty($params['customer_sku']), function ($q) use ($params) {
+//                $q->whereHas('items.goods', function ($qq) use ($params) {
+//                    $qq->where('customer_sku', 'like', '%' . trim($params['customer_sku']) . '%');
+//                });
+//            })
+//            ->when(!empty($params['department_ids']), function ($q) use ($params) {
+//                $q->whereIn('department_id', $params['department_ids']);
+//            })
+//            ->when(!empty($params['customer_ids']), function ($q) use ($params) {
+//                $q->whereIn('customer_id', $params['customer_ids']);
+//            })
+//            ->when(!empty($params['supplier_ids']), function ($q) use ($params) {
+//                $q->whereIn('supplier_id', $params['supplier_ids']);
+//            })
+//            ->when(!empty($params['status']), function ($q) use ($params) {
+//                $q->whereIn('status', $params['status']);
+//            }, function ($q) {
+//                $q->whereIn('status', [0,1,2]);
+//            })
+//            ->when(!empty($params['is_star']), function ($q) use ($params) {
+//                $q->whereIn('is_star', $params['is_star']);
+//            })
+//            ->orderBy('is_star', 'desc')
+//            ->orderBy('created_at', 'desc')
             ->with([
-                'items','departments','customers','suppliers','creator','updater',
-                'items.goods','items.goodsSkus'
+                'items','items.orderItem','items.orderItem.order','department','customer','supplier','creator','updater',
+                'items.goods','items.sku'
                 ])
             ->get();
         return $this->paginateCacheData($data, $params,$this->getPerPage());

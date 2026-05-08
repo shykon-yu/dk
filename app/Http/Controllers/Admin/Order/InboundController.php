@@ -7,26 +7,27 @@ use App\Http\Requests\Admin\OrderRequest;
 use App\Models\Order;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsService;
+use App\Services\Admin\Order\InboundService;
 use App\Services\Admin\Order\OrderService;
 use Illuminate\Http\Request;
 
-class OrderController extends Controller
+class InboundController extends Controller
 {
-    protected $orderService;
-    public function __construct(OrderService $orderService)
+    protected $inboundService;
+    public function __construct(InboundService $inboundService)
     {
-        $this->middleware('permission:admin.orders.index')->only('index');
-        $this->middleware('permission:admin.orders.store')->only('create', 'store');
-        $this->middleware('permission:admin.orders.update')->only('edit', 'update','status','star');
-        $this->middleware('permission:admin.orders.destroy')->only('destroy','batchDestroy');
-        $this->orderService = $orderService;
+        $this->middleware('permission:admin.inbounds.index')->only('index');
+        $this->middleware('permission:admin.inbounds.store')->only('create', 'store');
+        $this->middleware('permission:admin.inbounds.update')->only('edit', 'update','status','star');
+        $this->middleware('permission:admin.inbounds.destroy')->only('destroy','batchDestroy');
+        $this->inboundService = $inboundService;
 
     }
 
     public function index(Request $request)
     {
-        $mainOrders = $this->orderService->getOrdersList($request->all());
-        return view('admin.order.index', compact('mainOrders'));
+        $mainOrders = $this->inboundService->getInboundsList($request->all());
+        return view('admin.order.inbound.index', compact('mainOrders'));
     }
 
     public function items(Request $request)

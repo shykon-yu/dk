@@ -48,12 +48,12 @@
 
                 <div class="input-group">
                     <input class="form-control input-sm" name="ordered_at" id="ordered_at" autocomplete="off"
-                           placeholder="订货日期" type="text" value="{{ $order->ordered_at ? \Carbon\Carbon::parse($order->ordered_at)->toDateString() : '' }}">
+                           placeholder="订货日期" type="text" value="">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
                 <div class="input-group">
                     <input class="form-control input-sm" name="delivery_at" id="delivery_at" autocomplete="off"
-                           placeholder="交货日期" type="text" value="{{ $order->delivery_at ? \Carbon\Carbon::parse($order->delivery_at)->toDateString() : '' }}">
+                           placeholder="交货日期" type="text" value="">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 
@@ -222,13 +222,9 @@
     <!-- 上传Excel -->
     <div class="upload_main container" id="upload_file">
         <h4 class="title">上传生产通知书</h4>
-        <input type="hidden" name="excel_id" id="excel_id" value="{{ $order->excel->id ?? 0 }}">
+        <input type="hidden" name="excel_id" id="excel_id" value="0">
         <label class="upload_label">
-            @if($order->excel)
-                <span class="text">已上传：{{ $order->excel->name }}</span>
-            @else
-                <span class="text">上传文件</span>
-            @endif
+            <span class="text"></span>
             <input type="file" id="fileinp" class="upload_excel" accept="*">
         </label>
     </div>
@@ -243,6 +239,11 @@
         $(function () {
             $("#ordered_at").datepicker({maxDate: 0});
             $("#delivery_at").datepicker();
+
+            // 订单号
+            var u = new Date().getTime();
+            var mi = Math.floor(Math.random() * 900 + 100);
+            $("#order_code").text("o" + u + mi);
 
             // 计算合计
             totalAll();
@@ -493,7 +494,7 @@
                 });
             });
 
-            // 提交保存
+            // 表单验证
             $("#order").validate({
                 onsubmit: true,
                 rules: {
@@ -511,11 +512,12 @@
                     delivery_at: "请选交货日期",
                 },
                 submitHandler: function (form) {
-                    $("#p_confirm").prop('disabled', true).text('保存中...');
+                    $("#p_confirm").prop('disabled', true).text('提交中...');
                     $("#timg").removeClass("hidden");
 
                     let formData = new FormData();
-                    formData.append('_method', 'PUT');
+
+                    // 1. 追加表头信息
                     formData.append('department_id', $("#department_id").val());
                     formData.append('customer_id', $("#customer_id").val());
                     formData.append('supplier_id', $("#supplier_id").val());
@@ -527,7 +529,7 @@
 
                     $(".p_body tr").each(function (index) {
                         let $tr = $(this);
-                        formData.append(`goods[${index}][id]`,          $tr.find(".item-id").val());
+
                         formData.append(`goods[${index}][goods_id]`,      $tr.find("[name='goods_id']").val());
                         formData.append(`goods[${index}][sku_id]`,        $tr.find("[name='sku_id']").val());
                         formData.append(`goods[${index}][color_card]`,    $tr.find("[name='color_card']").val());
@@ -536,15 +538,24 @@
                         formData.append(`goods[${index}][price]`,         $tr.find("[name='price']").val());
                         formData.append(`goods[${index}][money]`,         $tr.find("[name='money']").val());
                         formData.append(`goods[${index}][remark]`,        $tr.find("[name='remark']").val());
+                        // formData.append(`goods[${index}][process_company_id]`,  $tr.find("[name='process_company_id']").val());
+                        // formData.append(`goods[${index}][process_price]`,       $tr.find("[name='process_price']").val());
+                        // formData.append(`goods[${index}][process_money]`,       $tr.find("[name='process_money']").val());
+                        // formData.append(`goods[${index}][process_company_id2]`, $tr.find("[name='process_company_id2']").val());
+                        // formData.append(`goods[${index}][process_price2]`,      $tr.find("[name='process_price2']").val());
+                        // formData.append(`goods[${index}][process_money2]`,      $tr.find("[name='process_money2']").val());
                     });
 
+                    // 3. AJAX 提交（固定写法）
                     $.ajax({
-                        url: "{{ route('admin.orders.update', $order->id) }}",
+                        url: "{{ route('admin.orders.store') }}",
                         type: "POST",
                         data: formData,
                         contentType: false,
                         processData: false,
-                        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+                        headers: {
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                        },
                         dataType: "json",
                         success: function (res) {
                             if (res.code === 200) {
@@ -552,13 +563,14 @@
                                 setTimeout(() => location.reload(), 1500);
                             } else {
                                 alert(res.msg);
-                                $("#p_confirm").prop('disabled', false).text('保存');
+                                $("#p_confirm").prop('disabled', false).text('提交');
                                 $("#timg").addClass("hidden");
                             }
                         },
-                        error: function () {
-                            alert('保存失败，请重试');
-                            $("#p_confirm").prop('disabled', false).text('保存');
+                        error: function (res) {
+                            let msg = res.responseJSON?.msg || '系统异常，请稍后再试';
+                            alert(msg);
+                            $("#p_confirm").prop('disabled', false).text('提交');
                             $("#timg").addClass("hidden");
                         }
                     });

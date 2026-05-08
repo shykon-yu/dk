@@ -169,11 +169,34 @@
                                 <td rowspan="{{ $itemCount }}">{{ $order->total_amount }}</td>
                                 <td rowspan="{{ $itemCount }}">
                                     {!! \App\Enums\CommonStyleEnum::getClass('prompt',$order->order_code,80) !!}
+                                    @can('reorder',$order)
+                                        <br>
+                                        <a href="{{ route('admin.orders.reorder', $order) }}" class="text-info m-r-5"
+                                           style="text-decoration:none; cursor: pointer; display: inline-block;">
+                                            <span class="label label-success">补单</span>
+                                        </a>
+                                    @endcan
                                 </td>
                                 <td rowspan="{{ $itemCount }}">
                                     <span class="{{ \App\Enums\OrderStatusEnum::getClass($item->status)  }}">
                                         {{ \App\Enums\OrderStatusEnum::getText($item->status)  }}
                                     </span>
+                                    @can('admin.orders.update')
+                                        @can('update',$order)
+                                        <br>
+                                        <a href="javascript:;"
+                                           class="change-status"
+                                           data-id="{{ $order->id }}"
+                                           data-status="{{ $order->status }}"
+                                           style="text-decoration:none; cursor: pointer; display: inline-block;">
+                                            @if($order->status == 3)
+                                                <span class="label label-danger">取消结单</span>
+                                            @else
+                                                <span class="label label-success">手动结单</span>
+                                            @endif&nbsp;
+                                        </a>
+                                        @endcan
+                                    @endcan
                                 </td>
                                 <td rowspan="{{ $itemCount }}" class="change-star" style="cursor:pointer" data-id="{{ $order->id }}" data-star="{{ $order->is_star }}">
                                     @if($order->is_star)
@@ -188,12 +211,21 @@
                                 <td rowspan="{{ $itemCount }}">{!! \App\Enums\CommonStyleEnum::getClass('prompt',$order->creator->name,50) !!}</td>
                                 <td rowspan="{{ $itemCount }}">{{ $order->created_at_date }}</td>
                                 <td rowspan="{{ $itemCount }}">
-                                    <a href="{{ route('admin.orders.edit', $order) }}" class="text-info m-r-5">
-                                        <span class="glyphicon glyphicon-edit"></span> 编辑
-                                    </a>
-                                    <a href="javascript:;" class="del_order text-danger" data-id="{{ $order->id }}">
-                                        <span class="glyphicon glyphicon-remove"></span> 删除
-                                    </a>
+                                    @can('admin.orders.update')
+                                        @can('update',$order)
+                                        <a href="{{ route('admin.orders.edit', $order) }}" class="text-info m-r-5">
+                                            <span class="glyphicon glyphicon-edit"></span> 编辑
+                                        </a>
+                                        @endcan
+                                    @endcan
+                                    @can('admin.orders.destroy')
+                                        @can('delete',$order)
+                                        <a href="javascript:;" class="del_order text-danger" data-id="{{ $order->id }}">
+                                            <span class="glyphicon glyphicon-remove"></span> 删除
+                                        </a>
+                                        @endcan
+                                    @endcan
+
                                 </td>
                             @endif
                         </tr>
@@ -209,15 +241,13 @@
                 </tfoot>
             </table>
 
-            <div style="margin-top:15px; text-align:left;">
-                <input type="button" class="btn btn-danger btn-sm" value="批量删除" onclick="Alldel()">
-            </div>
         </div>
     </div>
 @endsection
 
 @section('script')
     <script>
+        const ALL_STOCK = {{ \App\Enums\OrderStatusEnum::ALL_STOCK }};
         function checkAll() {
             let all = document.getElementById('all');
             let items = document.getElementsByName('one[]');
@@ -247,6 +277,48 @@
                     alert(res.msg);
                     if (res.code === 200) location.reload();
                 }).fail(err => alert(err.responseJSON?.msg || '删除失败'));
+            });
+
+            // 状态切换
+            $("#orders_list").on('click', ".change-status", function () {
+                let id = $(this).data('id');
+                let now = $(this).data('status');
+                let to = now == ALL_STOCK ? 0 : ALL_STOCK;
+                if (!confirm("确定" + (to ? "结单" : "取消") + "？")) return false;
+
+                $.post("{{ route('admin.orders.status','') }}/" + id, {
+                    _token: "{{ csrf_token() }}",
+                    status: to
+                }, res => {
+                    if (res.code === 200) {
+                        let html = res.status == ALL_STOCK
+                            ? '<span class="label label-danger">取消结单</span>'
+                            : '<span class="label label-success">手动结单</span>';
+                        $(this).html(html).data('status', res.status);
+                    }
+                    alert(res.msg);
+                }).fail(err => alert('操作失败'));
+            });
+
+            // 星标切换
+            $("#orders_list").on('click', ".change-star", function () {
+                let id = $(this).data('id');
+                let now = $(this).data('star');
+                let to = now == 1 ? 0 : 1;
+                if (!confirm("确定" + (to ? "星标" : "取消") + "？")) return false;
+
+                $.post("{{ route('admin.orders.star','') }}/"+id, {
+                    _token: "{{ csrf_token() }}",
+                    star : to
+                }, res => {
+                    if (res.code === 200) {
+                        let html = res.star == 1
+                            ? '<span class="glyphicon glyphicon-star text-warning" style="font-size:16px;"></span>'
+                            : '<span class="glyphicon glyphicon-star-empty text-muted" style="font-size:16px;"></span>';
+                        $(this).html(html).data('star',res.star);
+                    }
+                    alert(res.msg);
+                }).fail(err => alert('操作失败'));
             });
         });
 

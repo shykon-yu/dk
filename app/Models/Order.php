@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\FormatTimeTrait;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,6 +46,28 @@ class Order extends Base
     public function getTotalReceivedQuantityAttribute()
     {
         return $this->items->sum('received_quantity');
+    }
+
+    public function getOrderedAtDateAttribute()
+    {
+        if (!array_key_exists('ordered_at', $this->attributes)) {
+            return '';
+        }
+
+        return $this->attributes['ordered_at']
+            ? Carbon::parse($this->attributes['ordered_at'])->format('Y-m-d')
+            : '';
+    }
+
+    public function getdeliveryAtDateAttribute()
+    {
+        if (!array_key_exists('delivery_at', $this->attributes)) {
+            return '';
+        }
+
+        return $this->attributes['delivery_at']
+            ? Carbon::parse($this->attributes['delivery_at'])->format('Y-m-d')
+            : '';
     }
 
     public function creator()

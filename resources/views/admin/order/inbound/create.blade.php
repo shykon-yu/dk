@@ -8,6 +8,7 @@
             vertical-align: middle;
             text-align: center;
         }
+
         .product_minus, .product_plus {
             cursor: pointer;
             font-size: 12px;
@@ -19,45 +20,42 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span class="glyphicon glyphicon-pencil"></span>
-            <span class="panel-tit">编辑订货</span>
+            <span class="panel-tit">添加订货</span>
         </div>
         <div class="panel-body navbar-form">
             <form id="order" onkeydown="if(event.keyCode==13)return false;">
 
-                <select class="form-control input-sm" name="department_id" id="department_id" disabled>
+                <select class="form-control input-sm" name="department_id" id="department_id">
                     <option value="">-请选择部门-</option>
                     @foreach($_departments_auth as $vo)
-                        <option value="{{ $vo->id }}" {{ $vo->id == $order->department_id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="customer_id" id="customer_id" disabled>
+                <select class="form-control input-sm" name="customer_id" id="customer_id">
                     <option value="">-请选择客户-</option>
-                    @foreach($customers as $vo)
-                        <option value="{{ $vo->id }}" {{ $vo->id == $order->customer_id ? 'selected' : '' }}>{{ $vo->name }}</option>
-                    @endforeach
                 </select>
 
                 <select name="supplier_id" id="supplier_id" class="selectpicker"
                         data-live-search="true" data-live-search-placeholder="Search"
                         data-actions-box="true" title="请选择供应商">
                     @foreach($_suppliers as $vo)
-                        <option value="{{ $vo->id }}" {{ $vo->id == $order->supplier_id ? 'selected' : '' }}>{{ $vo->name }}</option>
+                        <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
                 </select>
 
                 <div class="input-group">
                     <input class="form-control input-sm" name="ordered_at" id="ordered_at" autocomplete="off"
-                           placeholder="订货日期" type="text" value="{{ $order->ordered_at ? \Carbon\Carbon::parse($order->ordered_at)->toDateString() : '' }}">
+                           placeholder="订货日期" type="text">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
                 <div class="input-group">
                     <input class="form-control input-sm" name="delivery_at" id="delivery_at" autocomplete="off"
-                           placeholder="交货日期" type="text" value="{{ $order->delivery_at ? \Carbon\Carbon::parse($order->delivery_at)->toDateString() : '' }}">
+                           placeholder="交货日期" type="text">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 
-                <span class="order">订单号：<span id="order_code">{{ $order->order_code }}</span></span>
+                <span class="order">订单号：<span id="order_code"></span></span>
 
                 <table id="dialog_radius" class="table table-bordered table-condensed table-hover table-striped"
                        style="margin-top:2em;">
@@ -66,6 +64,7 @@
                         <th colspan="2">排头信息</th>
                         <th colspan="4">产品信息</th>
                         <th colspan="6">订单信息</th>
+{{--                        <th colspan="6">辅材信息</th>--}}
                     </tr>
                     <tr>
                         <th>操作</th>
@@ -79,111 +78,124 @@
                         <th>单价</th>
                         <th>金额</th>
                         <th>备注</th>
+{{--                        <th style='color:blueviolet'>供应商1</th>--}}
+{{--                        <th style='color:blueviolet'>单价1</th>--}}
+{{--                        <th style='color:blueviolet'>金额1</th>--}}
+{{--                        <th style='color:blueviolet'>供应商2</th>--}}
+{{--                        <th style='color:blueviolet'>单价2</th>--}}
+{{--                        <th style='color:blueviolet'>金额2</th>--}}
                     </tr>
                     </thead>
                     <tbody class="text-center p_body" id="log">
+                    <tr>
+                        <td>
+{{--                            <span class="glyphicon glyphicon-minus product_minus"></span>&nbsp;&nbsp;--}}
+{{--                            <span class="glyphicon glyphicon-plus product_plus"></span>--}}
+                            <div class="btn-row">
+                                <button type="button" class="btn btn-sm btn-danger goods_minus ">-</button>
+                                <button type="button" class="btn btn-sm btn-success goods_plus ">+</button>
+                            </div>
+                        </td>
+                        <td class="serial_number">1</td>
+                        <td data-key="goods_id" class="padding_0 select_products">
+                            <select name="goods_id"
+                                    class="input_no_border form-control selectpicker goods_id"
+                                    data-live-search="true"
+                                    data-live-search-placeholder="输入货号/名称搜索"
+                                    title="请选择产品">
+{{--                                @foreach($goods as $good)--}}
+{{--                                    <option value="{{$good->id}}">{{$good->customer_sku}}</option>--}}
+{{--                                @endforeach--}}
 
-                    {{-- 循环订单商品 --}}
-                    @foreach($order->items as $item)
-                        <tr>
-                            <td>
-                                <div class="btn-row">
-                                    <button type="button" class="btn btn-sm btn-danger goods_minus">-</button>
-                                    <button type="button" class="btn btn-sm btn-success goods_plus">+</button>
-                                </div>
-                            </td>
-                            <input type="hidden" name="id" class="item-id" value="{{ $item->id ?? '' }}">
-                            <td class="serial_number">{{ $loop->iteration }}</td>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; ">
+                                {{-- 缩略图 --}}
+                                <img height="20px" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                                     class="thumb-img click-preview"
+                                     data-src=""
+                                     style="width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
 
-                            <td data-key="goods_id" class="padding_0 select_products">
-                                <select name="goods_id"
-                                        class="input_no_border form-control selectpicker goods_id"
-                                        data-live-search="true"
-                                        data-live-search-placeholder="输入货号/名称搜索"
-                                        title="请选择产品">
-
-                                    {{-- 1. 先判断：当前商品不在列表里 → 插到最前面并选中 --}}
-                                    @php
-                                        $currentGoodsId = $item->goods_id;
-                                        $existsInList = $goods->contains('id', $currentGoodsId);
-                                    @endphp
-
-                                    {{-- 不在列表里 → 优先显示在顶部 --}}
-                                    @if(!$existsInList)
-                                        <option value="{{ $item->goods_id }}" selected>
-                                            {{ $item->goods->customer_sku ?? '' }} {{ $item->goods->name ?? '' }}
-                                        </option>
-                                    @endif
-
-                                    {{-- 2. 循环正常200条商品 --}}
-                                    @foreach($goods as $good)
-                                        <option value="{{ $good->id }}" {{ $good->id == $currentGoodsId ? 'selected' : '' }}>
-                                            {{ $good->customer_sku }} {{ $good->name }}
-                                        </option>
-                                    @endforeach
-
-                                </select>
-                            </td>
-
-                            <td>
-                                <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; ">
-                                    <img height="20px" src="{{ $item->goods->thumb_image ? asset($item->goods->thumb_image) : '' }}"
-                                         class="thumb-img click-preview"
-                                         data-src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
-                                         style="width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
-                                    <img src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
-                                         class="hover-preview"
-                                         style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
-                                </div>
-                            </td>
-
-                            <td data-key="sku_id" class="padding_0">
-                                <select name="sku_id" class="form-control input_no_border input-sm sku_id">
-                                    <option value="">--请选择颜色--</option>
-                                    @foreach($item->goods->skus ?? [] as $sku)
-                                        <option value="{{ $sku->id }}" {{ $sku->id == $item->sku_id ? 'selected' : '' }}>
-                                            {{ $sku->color ?? '无颜色' }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td data-key="color_card" class="padding_0">
-                                <input type="text" class="form-control input-sm input_no_border color_card"
-                                       name="color_card" value="{{ $item->color_card }}" placeholder="色号">
-                            </td>
-
-                            <td data-key="number" class="padding_0">
-                                <input type="text" class="form-control input_no_border input-sm number"
-                                       name="number" value="{{ $item->number }}" placeholder="数量">
-                            </td>
-
-                            <td data-key="currency_id" class="padding_0">
-                                <select class="form-control input_no_border input-sm currency_id" name="currency_id">
-                                    @foreach($_currencies as $vo)
-                                        <option value="{{ $vo->id }}" {{ $vo->id == $item->currency_id ? 'selected' : '' }}>
-                                            {{ $vo->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-
-                            <td data-key="price" class="padding_0">
-                                <input type="text" class="form-control input_no_border input-sm price"
-                                       name="price" value="{{ $item->price }}" placeholder="单价">
-                            </td>
-
-                            <td data-key="money" class="padding_0">
-                                <input type="text" class="form-control input_no_border input-sm money"
-                                       name="money" value="{{ $item->money }}" placeholder="金额">
-                            </td>
-
-                            <td data-key="remark" class="padding_0">
-                                <input type="text" class="form-control input_no_border input-sm remark"
-                                       name="remark" value="{{ $item->remark }}" placeholder="备注">
-                            </td>
-                        </tr>
-                    @endforeach
-
+                                {{-- 右侧悬浮预览图 --}}
+                                <img src=""
+                                     class="hover-preview"
+                                     style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
+                            </div>
+                        </td>
+                        <td data-key="sku_id" class="padding_0">
+                            <select name="sku_id"
+                                    class="form-control input_no_border input-sm sku_id">
+                                <option value="">--请选择颜色--</option>
+                            </select>
+                        </td>
+                        <td data-key="color_card" class="padding_0">
+                            <input type="text" class="form-control input-sm input_no_border color_card"
+                                   name="color_card" placeholder="色号">
+                        </td>
+                        <td data-key="number" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm number" name="number"
+                                   value="0" placeholder="数量">
+                        </td>
+                        <td data-key="currency_id" class="padding_0">
+                            <select class="form-control input_no_border input-sm currency_id" name="currency_id">
+                                @foreach($_currencies as $vo)
+                                    <option value="{{ $vo->id }}"
+                                            currency_icon="{{ $vo->currency_symbol }}" {{ $vo->id==1 ? 'selected' : '' }}>
+                                        {{ $vo->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td data-key="price" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm price" name="price"
+                                   placeholder="单价">
+                        </td>
+                        <td data-key="money" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm money" name="money"
+                                   placeholder="金额">
+                        </td>
+                        <td data-key="remark" class="padding_0">
+                            <input type="text" class="form-control input_no_border input-sm remark" name="remark"
+                                   placeholder="备注">
+                        </td>
+{{--                        <td data-key="process_company_id" class="padding_0">--}}
+{{--                            <select name="process_company_id"--}}
+{{--                                    class="input_no_border form-control selectpicker process_company_id"--}}
+{{--                                    data-live-search="true" title="供应商">--}}
+{{--                                <option value="0">供应商</option>--}}
+{{--                                @foreach($_suppliers as $vo)--}}
+{{--                                    <option value="{{ $vo->id }}">{{ $vo->name }}</option>--}}
+{{--                                @endforeach--}}
+{{--                            </select>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_price" class="padding_0">--}}
+{{--                            <input type="text" value="0" class="form-control input_no_border input-sm process_price"--}}
+{{--                                   name="process_price">--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_money" class="padding_0">--}}
+{{--                            <input type="text" class="form-control input_no_border input-sm process_money" value="0"--}}
+{{--                                   name="process_money" readonly>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_company_id2" class="padding_0">--}}
+{{--                            <select name="process_company_id2"--}}
+{{--                                    class="input_no_border form-control selectpicker process_company_id2"--}}
+{{--                                    data-live-search="true" title="供应商">--}}
+{{--                                <option value="0">供应商</option>--}}
+{{--                                @foreach($_suppliers as $vo)--}}
+{{--                                    <option value="{{ $vo->id }}">{{ $vo->name }}</option>--}}
+{{--                                @endforeach--}}
+{{--                            </select>--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_price2" class="padding_0">--}}
+{{--                            <input type="text" value="0" class="form-control input_no_border input-sm process_price2"--}}
+{{--                                   name="process_price2">--}}
+{{--                        </td>--}}
+{{--                        <td data-key="process_money2" class="padding_0">--}}
+{{--                            <input type="text" class="form-control input_no_border input-sm process_money2" value="0"--}}
+{{--                                   name="process_money2" readonly>--}}
+{{--                        </td>--}}
+                    </tr>
                     </tbody>
                     <tfoot>
                     <tr>
@@ -198,6 +210,12 @@
                         <th>单价</th>
                         <th>金额<br><span id="total_money"></span></th>
                         <th>备注</th>
+{{--                        <th>供应商1</th>--}}
+{{--                        <th>单价1</th>--}}
+{{--                        <th>金额1<br><span id="total_process_money"></span></th>--}}
+{{--                        <th>供应商2</th>--}}
+{{--                        <th>单价2</th>--}}
+{{--                        <th>金额2<br><span id="total_process_money2"></span></th>--}}
                     </tr>
                     <tr class="hidden" id="timg">
                         <th colspan="18"><img src="/images/timg.gif"/>正在提交中...</th>
@@ -205,30 +223,26 @@
                     </tfoot>
                 </table>
 
-                <button class="btn btn-success pull-right" type="submit" id="p_confirm">保存</button>
+                <button class="btn btn-success pull-right" type="submit" id="p_confirm">提交</button>
             </form>
         </div>
     </div>
 
     <div class="form-group container">
         <label for="comment">其他注意事项:</label>
-        <textarea class="form-control" rows="5" id="comment">{{ $order->comment }}</textarea>
+        <textarea class="form-control" rows="5" id="comment"></textarea>
     </div>
 
     <div id="success" class="text-center text-info" style="display:none;">
-        <div style="margin-top:1.5em"><span class="glyphicon glyphicon-ok"></span>&nbsp;&nbsp;保存成功</div>
+        <div style="margin-top:1.5em"><span class="glyphicon glyphicon-ok"></span>&nbsp;&nbsp;添加成功</div>
     </div>
 
     <!-- 上传Excel -->
     <div class="upload_main container" id="upload_file">
         <h4 class="title">上传生产通知书</h4>
-        <input type="hidden" name="excel_id" id="excel_id" value="{{ $order->excel->id ?? 0 }}">
+        <input type="hidden" name="excel_id" id="excel_id" value="0">
         <label class="upload_label">
-            @if($order->excel)
-                <span class="text">已上传：{{ $order->excel->name }}</span>
-            @else
-                <span class="text">上传文件</span>
-            @endif
+            <span class="text"></span>
             <input type="file" id="fileinp" class="upload_excel" accept="*">
         </label>
     </div>
@@ -236,19 +250,19 @@
 
 @section('script_js')
     <script>
-        var ORDER_ID = {{ $order->id }};
-        var CURRENT_CUSTOMER_DEFAULT_GOODS = @json($goods ?? collect());
+        // 全局缓存：当前客户的【默认200个商品】
+        var CURRENT_CUSTOMER_DEFAULT_GOODS = [];
+        // 存商品搜索框的关键词
         var GOODS_SEARCH_KEYWORD = '';
-
         $(function () {
+            // 日期初始化
             $("#ordered_at").datepicker({maxDate: 0});
             $("#delivery_at").datepicker();
 
-            // 计算合计
-            totalAll();
-
-            // 加行 / 减行 / 计算 / 搜索 全部和添加页一样
-            // 下面 JS 完全复用你的添加页 JS
+            // 订单号
+            var u = new Date().getTime();
+            var mi = Math.floor(Math.random() * 900 + 100);
+            $("#order_code").text("o" + u + mi);
 
             // 回车切换
             $(document).on("keyup", "input", function (e) {
@@ -277,6 +291,7 @@
                 setTimeout(() => {
                     _this_tr.next().find('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
                 }, 100);
+                // $(this).remove();
                 refreshSerial();
             });
 
@@ -307,13 +322,19 @@
                 let self = $(obj).parents("tr");
                 let price = parseFloat(self.find(".price").val() || 0);
                 let number = parseFloat(self.find(".number").val() || 0);
+                // let p1 = parseFloat(self.find(".process_price").val() || 0);
+                // let p2 = parseFloat(self.find(".process_price2").val() || 0);
                 self.find(".money").val((price * number).toFixed(2));
+                // self.find(".process_money").val((p1 * number).toFixed(2));
+                // self.find(".process_money2").val((p2 * number).toFixed(2));
             }
 
             // 合计
             function totalAll() {
                 total("number", 0);
                 total("money", 2);
+                // total("process_money", 2);
+                // total("process_money2", 2);
             }
 
             function total(t, n) {
@@ -324,12 +345,13 @@
                 $("#total_" + t).text(sum.toFixed(n));
             }
 
-            // 部门→客户
+            // 部门 → 客户
             $(document).on('change', '#department_id', function () {
                 let department_id = $(this).val();
                 $('#customer_id').html('<option value="">-请选择客户-</option>');
                 if (!department_id) return;
 
+                // 客户
                 $.ajax({
                     url: "{{ route('admin.common.customer-by-dept') }}",
                     type: "POST",
@@ -347,24 +369,28 @@
                 });
             });
 
-            // 客户→商品
+            // 选择客户 → 加载该客户的默认200个商品
             $(document).on('change', '#customer_id', function () {
                 let customer_id = $(this).val();
                 let $select = $("select[name='goods_id']");
 
                 if (!customer_id) {
                     $select.html('').selectpicker('refresh');
-                    CURRENT_CUSTOMER_DEFAULT_GOODS = [];
+                    CURRENT_CUSTOMER_DEFAULT_GOODS = []; // 清空缓存
                     return;
                 }
-                GOODS_SEARCH_KEYWORD = '';
+                GOODS_SEARCH_KEYWORD = ''; // 切换客户清空
+                // AJAX 获取 200 个默认商品
                 $.ajax({
                     url: "{{ route('admin.common.customer-default-goods') }}",
                     type: 'POST',
                     data: { customer_id: customer_id, _token: "{{ csrf_token() }}" },
                     success: function (res) {
                         if (res.code === 200) {
+                            // 👇 关键：缓存到全局变量
                             CURRENT_CUSTOMER_DEFAULT_GOODS = res.data;
+
+                            // 渲染到下拉框
                             let str = "";
                             $.each(res.data, function (i, item) {
                                 str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
@@ -375,7 +401,8 @@
                 });
             });
 
-            // 商品搜索
+
+            // 商品搜索（输入时触发）
             $(document).on('shown.bs.select', '.goods_id', function () {
                 let $select = $(this).find("select[name='goods_id']");
                 let customer_id = $("#customer_id").val();
@@ -384,19 +411,26 @@
                     $('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
                 }, 100);
 
+                // 监听搜索框输入事件
                 $('.bs-searchbox input').off('keyup').on('keyup', function () {
                     GOODS_SEARCH_KEYWORD = $(this).val().trim();
                     let keyword = $(this).val().trim();
                     if (keyword === '') {
                         let str = "";
+                        // 直接用全局缓存的200个
                         $.each(CURRENT_CUSTOMER_DEFAULT_GOODS, function (i, item) {
                             str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
                         });
                         $select.html(str).selectpicker('refresh').selectpicker('render');
                         return;
                     }
-                    if (keyword.length < 2) return;
 
+                    // 关键词太短不搜索（避免频繁请求）
+                    if (keyword.length < 2) {
+                        return;
+                    }
+
+                    // AJAX 后端搜索商品
                     $.ajax({
                         url: "{{ route('admin.common.goods-search') }}",
                         type: 'POST',
@@ -410,6 +444,8 @@
                             $.each(res.data, function (i, item) {
                                 html += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;
                             });
+
+                            // 替换下拉内容
                             $select.html(html).selectpicker('refresh');
                             $select.selectpicker('render');
                         }
@@ -417,14 +453,17 @@
                 });
             });
 
-            // 选择商品→加载SKU
+            // 选择商品 → 加载颜色
             $(document).on('change', '.goods_id', function () {
                 let goods_id = $(this).val();
                 let _this = $(this).parents('tr');
                 _this.find('.sku_id').html("<option>请选择</option>");
                 _this.find('.price').val('');
-                if (!goods_id) return false;
+                if (!goods_id) {
+                    return false;
+                }
 
+                // AJAX 获取 200 个默认商品
                 $.ajax({
                     url: "{{ route('admin.common.sku-by-goods') }}",
                     type: 'POST',
@@ -446,20 +485,23 @@
                 });
             });
 
-            // 选择SKU→填价格
             $(document).on('change', '.sku_id', function () {
                 let $sku = $(this);
                 let skuId = $sku.val();
-                let $tr = $sku.parents('tr');
-                let skuList = $tr.data('skuList');
+                let $tr = $sku.parents('tr');     // 当前行
+                let skuList = $tr.data('skuList'); // 取出之前存的SKUs
+
                 if (!skuId || !skuList) return;
+
+                // 找到对应SKU
                 let sku = skuList.find(item => item.id == skuId);
-                $tr.find('.price').val(sku.cost_price);
-                stereNum(this);
-                totalAll();
+
+                $tr.find('.price').val(sku.cost_price);         // 单价
+                //$tr.find('.process_price').val(sku.process_price); // 加工费
+                //$tr.find('.money').val(sku.price);         // 金额
             });
 
-            // 上传Excel
+
             $(document).on('change', '.upload_excel', function (e) {
                 let file = e.target.files[0];
                 if (!file) return;
@@ -468,7 +510,9 @@
                 formData.append('file', file);
                 formData.append('_token', "{{ csrf_token() }}");
 
+                // 上传中提示
                 $(".upload_label .text").text("上传中...");
+
                 $.ajax({
                     url: "{{ route('admin.orders.upload.excel') }}",
                     type: 'POST',
@@ -493,7 +537,7 @@
                 });
             });
 
-            // 提交保存
+            // 表单验证
             $("#order").validate({
                 onsubmit: true,
                 rules: {
@@ -511,11 +555,12 @@
                     delivery_at: "请选交货日期",
                 },
                 submitHandler: function (form) {
-                    $("#p_confirm").prop('disabled', true).text('保存中...');
+                    $("#p_confirm").prop('disabled', true).text('提交中...');
                     $("#timg").removeClass("hidden");
 
                     let formData = new FormData();
-                    formData.append('_method', 'PUT');
+
+                    // 1. 追加表头信息
                     formData.append('department_id', $("#department_id").val());
                     formData.append('customer_id', $("#customer_id").val());
                     formData.append('supplier_id', $("#supplier_id").val());
@@ -527,7 +572,7 @@
 
                     $(".p_body tr").each(function (index) {
                         let $tr = $(this);
-                        formData.append(`goods[${index}][id]`,          $tr.find(".item-id").val());
+
                         formData.append(`goods[${index}][goods_id]`,      $tr.find("[name='goods_id']").val());
                         formData.append(`goods[${index}][sku_id]`,        $tr.find("[name='sku_id']").val());
                         formData.append(`goods[${index}][color_card]`,    $tr.find("[name='color_card']").val());
@@ -536,15 +581,24 @@
                         formData.append(`goods[${index}][price]`,         $tr.find("[name='price']").val());
                         formData.append(`goods[${index}][money]`,         $tr.find("[name='money']").val());
                         formData.append(`goods[${index}][remark]`,        $tr.find("[name='remark']").val());
+                        // formData.append(`goods[${index}][process_company_id]`,  $tr.find("[name='process_company_id']").val());
+                        // formData.append(`goods[${index}][process_price]`,       $tr.find("[name='process_price']").val());
+                        // formData.append(`goods[${index}][process_money]`,       $tr.find("[name='process_money']").val());
+                        // formData.append(`goods[${index}][process_company_id2]`, $tr.find("[name='process_company_id2']").val());
+                        // formData.append(`goods[${index}][process_price2]`,      $tr.find("[name='process_price2']").val());
+                        // formData.append(`goods[${index}][process_money2]`,      $tr.find("[name='process_money2']").val());
                     });
 
+                    // 3. AJAX 提交（固定写法）
                     $.ajax({
-                        url: "{{ route('admin.orders.update', $order->id) }}",
+                        url: "{{ route('admin.orders.store') }}",
                         type: "POST",
                         data: formData,
                         contentType: false,
                         processData: false,
-                        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+                        headers: {
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                        },
                         dataType: "json",
                         success: function (res) {
                             if (res.code === 200) {
@@ -552,21 +606,19 @@
                                 setTimeout(() => location.reload(), 1500);
                             } else {
                                 alert(res.msg);
-                                $("#p_confirm").prop('disabled', false).text('保存');
+                                $("#p_confirm").prop('disabled', false).text('提交');
                                 $("#timg").addClass("hidden");
                             }
                         },
-                        error: function () {
-                            alert('保存失败，请重试');
-                            $("#p_confirm").prop('disabled', false).text('保存');
+                        error: function (res) {
+                            let msg = res.responseJSON?.msg || '系统异常，请稍后再试';
+                            alert(msg);
+                            $("#p_confirm").prop('disabled', false).text('提交');
                             $("#timg").addClass("hidden");
                         }
                     });
                 }
             });
-
-            // 初始化刷新selectpicker
-            $('.selectpicker').selectpicker('refresh');
         });
     </script>
 @endsection

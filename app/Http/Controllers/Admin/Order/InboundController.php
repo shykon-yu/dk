@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin\Order;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\InboundRequest;
 use App\Http\Requests\Admin\OrderRequest;
+use App\Models\Inbound;
 use App\Models\Order;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\Order\InboundService;
-use App\Services\Admin\Order\OrderService;
+use App\Services\Admin\ViewDataService;
 use Illuminate\Http\Request;
 
 class InboundController extends Controller
@@ -32,54 +34,59 @@ class InboundController extends Controller
 
     public function items(Request $request)
     {
-        $items = $this->orderService->getItems($request->all());
-        return view('admin.order.items', compact('items'));
+        $items = $this->inboundService->getItems($request->all());
+        return view('admin.order.inbound.items', compact('items'));
     }
 
     public function create()
     {
-        return view('admin.order.create');
+        return view('admin.order.inbound.create');
     }
 
-    public function store( OrderRequest $request )
+    public function store( InboundRequest $request )
     {
-        $this->orderService->store($request->validated());
+        $this->inboundService->store($request->validated());
         return response()->json([
             'code' => 200,
             'msg' => '新增成功',
         ]);
     }
-    public function edit(Order $order)
+    public function edit(Inbound $inbound)
     {
-        $this->authorize('update', $order);
-        $params = ['customer_id' => $order->customer_id,];
+        $this->authorize('update', $inbound);
+        $params = ['customer_id' => $inbound->customer_id,];
         $goods = app(GoodsService::class)->search($params);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($order->department_id);
-        return view('admin.order.edit', compact('order', 'customers', 'goods'));
+        $customers = app(CustomerService::class)->getCustomerByDepartmentId($inbound->department_id);
+        $warehouses = app(ViewDataService::class)->getWarehouses();
+        $warehouses = $warehouses->where('department_id', $inbound->department_id)->values();
+        return view('admin.order.inbound.edit', compact('inbound', 'customers', 'goods', 'warehouses'));
     }
 
-    public function reorder(Order $order)
+    public function show(Inbound $inbound)
     {
-        $this->authorize('reorder', $order);
-        $params = ['customer_id' => $order->customer_id,];
+        $this->authorize('update', $inbound);
+        $params = ['customer_id' => $inbound->customer_id,];
         $goods = app(GoodsService::class)->search($params);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($order->department_id);
-        return view('admin.order.reorder', compact('order', 'customers', 'goods'));
+        $customers = app(ViewDataService::class)->getCustomers();
+        $customers = $customers->where('department_id',$inbound->department_id)->values();
+        $warehouses = app(ViewDataService::class)->getWarehouses();
+        $warehouses = $warehouses->where('department_id', $inbound->department_id)->values();
+        return view('admin.order.inbound.show', compact('inbound', 'customers', 'goods', 'warehouses'));
     }
 
-    public function update(OrderRequest $request, Order $order)
+    public function update(InboundRequest $request, Inbound $inbound)
     {
-        $this->orderService->update($order,$request->validated());
+        $this->inboundService->update($inbound,$request->validated());
         return response()->json([
             'code' => 200,
             'msg' => '修改成功'
         ]);
     }
 
-    public function destroy(Order $order)
+    public function destroy(Inbound $inbound)
     {
-        $this->authorize('delete', $order);
-        $this->orderService->destroy($order);
+        $this->authorize('delete', $inbound);
+        $this->inboundService->destroy($inbound);
         return response()->json([
             'code' => 200,
             'msg' => '删除成功',

@@ -25,6 +25,7 @@ class OrderRequest extends FormRequest
             'comment' => ['nullable', 'string'],
 
             'goods' => ['required', 'array', 'min:1'],
+            'goods.*.id' => ['nullable', 'integer', 'min:1'],
             'goods.*.goods_id' => ['required', 'integer', 'min:1'],
             'goods.*.sku_id' => ['required', 'integer', 'min:1'],
             'goods.*.color_card' => ['nullable', 'string'],

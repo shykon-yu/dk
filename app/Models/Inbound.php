@@ -13,8 +13,19 @@ class Inbound extends Base
     use SoftDeletes , FormatTimeTrait;
 
     protected $fillable = ['department_id', 'customer_id', 'supplier_id', 'warehouse_id', 'inbound_code', 'status',
-        'batch_no', 'created_user_id', 'updated_user_id', 'inbound_at',
+        'batch_no', 'created_user_id', 'updated_user_id', 'inbound_at', 'comment'
     ];
+
+    static public function booted()
+    {
+        static::creating(function ($model) {
+            $model->created_user_id = auth()->id();
+            $model->updated_user_id = auth()->id();
+        });
+        static::updating(function ($model) {
+            $model->updated_user_id = auth()->id();
+        });
+    }
 
     public function getTotalQuantityAttribute()
     {

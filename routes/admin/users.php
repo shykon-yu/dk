@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\NotificationController;
 
 //用户管理
 Route::delete('users/batch', [UserController::class, 'batchDestroy'])->name('users.batch.destroy');
@@ -52,3 +53,7 @@ Route::resource('clearances',ClearanceController::class);
 Route::delete('payments/batch', [PaymentController::class, 'batchDestroy'])->name('payments.batch.destroy');
 Route::post('payments/status/{payment}',[PaymentController::class,'status'])->name('payments.status');
 Route::resource('payments',PaymentController::class);
+
+//通知
+Route::get('notifications/index', [NotificationController::class, 'index'])->name('notifications.index');
+Route::get('notifications/show/{id}/{type}', [NotificationController::class, 'show'])->name('notifications.show');

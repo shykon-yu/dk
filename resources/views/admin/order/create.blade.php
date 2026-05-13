@@ -8,11 +8,6 @@
             vertical-align: middle;
             text-align: center;
         }
-
-        .product_minus, .product_plus {
-            cursor: pointer;
-            font-size: 12px;
-        }
     </style>
 @endsection
 

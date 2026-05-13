@@ -31,7 +31,7 @@ class CustomerService extends BaseService{
             ->when(!empty($params['department_ids']), function ($query) use ($params) {
                 $query->whereIn('department_id', $params['department_ids']);
             })
-            ->with('department','clearance','payment','creator','updater')
+            ->with(['department', 'clearance', 'payment', 'creator', 'updater'])
             ->orderBy('sort', 'asc')
             ->get();
         return $this->paginateCacheData($data, $params,$this->getPerPage());
@@ -39,8 +39,12 @@ class CustomerService extends BaseService{
 
     public function getCustomerByDepartmentId(int $departmentId): Collection
     {
-        $data = $this->getCacheAll();
-        $data = $departmentId?$data->where('department_id',$departmentId)->values():collect();
-        return $data;
+        if ($departmentId <= 0) {
+            return collect();
+        }
+
+        return $this->getCacheAll()
+            ->where('department_id', $departmentId)
+            ->values();
     }
 }

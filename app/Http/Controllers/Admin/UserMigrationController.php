@@ -75,10 +75,10 @@ class UserMigrationController extends Controller
                             })
                             ->where('sku_id', $first->products_color_id)
                             ->first();
-                        if(!$orderData){continue;}
+                        //if(!$orderData){continue;}
                         $insertItems[] = [
                             'inbound_id'          => $orderId,
-                            'order_id'          => $orderData->id,
+                            'order_item_id'          => $orderData?$orderData->id:0,
                             'goods_id'          => $item->products_id,
                             'sku_id'            => $item->products_color_id,
                             'quantity'            => $item->inbound_number,

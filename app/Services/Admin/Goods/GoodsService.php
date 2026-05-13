@@ -326,6 +326,7 @@ class GoodsService extends BaseService{
     {
         try {
             $goods = Goods::query()
+                ->select('goods.id','goods.name','goods.customer_sku')
                 ->leftJoin('goods_seasons as gs', 'gs.id', '=', 'goods.season_id')
                 ->where('goods.customer_id', $params['customer_id'])
                 ->when(!empty($params['keyword']), function ($q) use ($params) {

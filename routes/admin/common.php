@@ -12,3 +12,5 @@ Route::post('common/goods-search', [CommonController::class, 'getGoodsSearch'])-
 Route::post('common/customer-default-goods', [CommonController::class, 'getCustomerDefaultGoods'])->name('common.customer-default-goods');
 //通过商品获取SKU
 Route::post('common/sku-by-goods', [CommonController::class, 'getSkuByGoods'])->name('common.sku-by-goods');
+//通过客户获取订单
+Route::post('common/get-order-items-list', [CommonController::class, 'getOrderItemsList'])->name('common.get-order-items-list');

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Inbound;
+use App\Observers\InboundObserver;
 use App\Services\Admin\MenuService;
 use App\Services\Admin\ViewDataService;
 use Illuminate\Support\ServiceProvider;
@@ -27,5 +29,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with($viewDataService->getAllCommonData());
         });
+
+        Inbound::observe(InboundObserver::class);
     }
 }

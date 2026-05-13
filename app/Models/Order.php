@@ -10,11 +10,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Base
 {
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        $this->appends = array_merge($this->appends, [
+            'ordered_at_date',
+            'delivery_at_date',
+        ]);
+    }
     use SoftDeletes , FormatTimeTrait;
     protected $fillable = ['department_id','customer_id','supplier_id','order_code','status','excel_id','ordered_at','delivery_at',
         'comment','is_star','status_remark','created_user_id','updated_user_id'];
     protected $dates = ['deleted_at'];
-
     static public function booted()
     {
         static::creating(function ($model) {
@@ -59,7 +67,7 @@ class Order extends Base
             : '';
     }
 
-    public function getdeliveryAtDateAttribute()
+    public function getDeliveryAtDateAttribute()
     {
         if (!array_key_exists('delivery_at', $this->attributes)) {
             return '';

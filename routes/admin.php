@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\TestController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\UserMigrationController;
+use App\Http\Controllers\Admin\InfoController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
 
@@ -21,6 +22,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/test', [TestController::class, 'index'])->name('test');
         Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
         Route::get('/migrate',[UserMigrationController::class,'migrate'])->name('migrate');
+        Route::get('info',[InfoController::class,'info'])->name('info');
 
         require __DIR__ . '/admin/users.php';//用户 角色 菜单 客户 供应商等
         require __DIR__ . '/admin/goods.php';//商品相关

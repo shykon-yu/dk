@@ -37,7 +37,7 @@
         <div class="panel-body navbar-form">
             <form id="order" onkeydown="if(event.keyCode==13)return false;">
 
-                <select class="form-control input-sm" name="department_id" id="department_id" disabled>
+                <select class="form-control input-sm" name="department_id" id="department_id">
                     <option value="">-请选择部门-</option>
                     @foreach($_departments_auth as $vo)
                         <option value="{{ $vo->id }}" {{ $vo->id == $inbound->department_id ? 'selected' : '' }}>
@@ -46,14 +46,14 @@
                     @endforeach
                 </select>
 
-                <select class="form-control input-sm" name="customer_id" id="customer_id" disabled>
+                <select class="form-control input-sm" name="customer_id" id="customer_id">
                     <option value="">-请选择客户-</option>
                     <option value="{{ $inbound->customer_id }}" selected>{{ $inbound->customer->name }}</option>
                 </select>
 
                 <select class="form-control input-sm" name="warehouse_id" id="warehouse_id">
                     <option value="">-请选择仓库-</option>
-                    @foreach($warehouses as $vo)
+                    @foreach($_warehouses as $vo)
                         <option value="{{ $vo->id }}" {{ $vo->id == $inbound->warehouse_id ? 'selected' : '' }}>
                             {{ $vo->name }}
                         </option>
@@ -72,7 +72,7 @@
 
                 <div class="input-group">
                     <input class="form-control input-sm" name="inbound_at" id="inbound_at" autocomplete="off"
-                           placeholder="入库日期" type="text" value="{{ $inbound->inbound_at_date }}">
+                           placeholder="入库日期" type="text" value="{{ $inbound->inbound_at }}">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 
@@ -84,7 +84,7 @@
                     <tr>
                         <th colspan="2">排头信息</th>
                         <th colspan="4">产品信息</th>
-                        <th colspan="6">订单信息</th>
+                        <th colspan="7">订单信息</th>
                     </tr>
                     <tr>
                         <th>操作</th>
@@ -96,6 +96,7 @@
                         <th>剩余数量</th>
                         <th>入库数量</th>
                         <th>货币</th>
+                        <th>符号</th>
                         <th>单价</th>
                         <th>金额</th>
                         <th>备注</th>
@@ -105,7 +106,7 @@
 
                     {{-- 循环回显子单 --}}
                     @foreach($inbound->items as $key => $item)
-                        <tr data-skuList="{{ $item->goods->skus }}">
+                        <tr>
                             <td>
                                 <div class="btn-row">
                                     <button type="button" class="btn btn-sm btn-danger goods_minus">-</button>
@@ -113,14 +114,10 @@
                                 </div>
                             </td>
                             <td class="serial_number">{{ $key+1 }}</td>
-                            <td data-key="inbound_item_id" class="padding_0" hidden>
-                                <input type="text" class="form-control input_no_border input-sm inbound_item_id"
-                                       name="inbound_item_id"
-                                       value="{{ $item->id }}">
-                            </td>
+
                             <td data-key="order_code" class="padding_0">
                                 <input type="text" class="form-control input_no_border input-sm order_code" name="order_code"
-                                       value="{{ $item->order_item_id == 0 ? '关联订单': $item->orderItem->order->order_code }}" readonly>
+                                       value="{{ $item->order_code }}" readonly>
                             </td>
                             <td data-key="order_item_id" class="padding_0" hidden>
                                 <input type="text" class="form-control input_no_border input-sm order_item_id" name="order_item_id"
@@ -132,51 +129,26 @@
                                         class="input_no_border form-control selectpicker goods_id"
                                         data-live-search="true"
                                         data-live-search-placeholder="输入货号/名称搜索"
-                                        title="请选择产品" @if($item->order_item_id!=0) disabled @endif>
-
-                                    {{-- 1. 先判断：当前商品不在列表里 → 插到最前面并选中 --}}
-                                    @php
-                                        $currentGoodsId = $item->goods_id;
-                                        $existsInList = $goods->contains('id', $currentGoodsId);
-                                    @endphp
-
-                                    {{-- 不在列表里 → 优先显示在顶部 --}}
-                                    @if(!$existsInList)
-                                        <option value="{{ $item->goods_id }}" selected>
-                                            {{ $item->goods->customer_sku ?? '' }} {{ $item->goods->name ?? '' }}
-                                        </option>
-                                    @endif
-
-                                    {{-- 2. 循环正常200条商品 --}}
-                                    @foreach($goods as $good)
-                                        <option value="{{ $good->id }}" {{ $good->id == $currentGoodsId ? 'selected' : '' }}>
-                                            {{ $good->customer_sku }} {{ $good->name }}
-                                        </option>
-                                    @endforeach
-
+                                        title="请选择产品">
+                                    <option value="{{ $item->goods_id }}" selected>{{ $item->goods->name }}</option>
                                 </select>
                             </td>
 
-                            <td>
+                            <td class="preview_image padding_0" image_url="{{ $item->goods->thumb_image }}">
                                 <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; ">
-                                    <img height="20px" src="{{ $item->goods->thumb_image ? asset($item->goods->thumb_image) : '' }}"
+                                    <img height="20px" src="{{ $item->goods->thumb_image }}"
                                          class="thumb-img click-preview"
-                                         data-src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
+                                         data-src="{{ $item->goods->main_image }}"
                                          style="width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
-                                    <img src="{{ $item->goods->main_image ? asset($item->goods->main_image) : '' }}"
+                                    <img src="{{ $item->goods->main_image }}"
                                          class="hover-preview"
                                          style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
                                 </div>
                             </td>
 
                             <td data-key="sku_id" class="padding_0">
-                                <select name="sku_id" class="form-control input_no_border input-sm sku_id" @if($item->order_item_id!=0) disabled @endif>
-                                    <option value="">--请选择颜色--</option>
-                                    @foreach($item->goods->skus ?? [] as $sku)
-                                        <option value="{{ $sku->id }}" {{ $sku->id == $item->sku_id ? 'selected' : '' }}>
-                                            {{ $sku->color ?? '无颜色' }}
-                                        </option>
-                                    @endforeach
+                                <select name="sku_id" class="form-control input_no_border input-sm sku_id">
+                                    <option value="{{ $item->sku_id }}" selected>{{ $item->sku->color }}</option>
                                 </select>
                             </td>
 
@@ -195,13 +167,16 @@
                             </td>
 
                             <td data-key="currency_id" class="padding_0">
-                                <select class="form-control input_no_border input-sm currency_id" name="currency_id" @if($item->order_item_id!=0) disabled @endif>
+                                <select class="form-control input_no_border input-sm currency_id" name="currency_id">
                                     @foreach($_currencies as $vo)
                                         <option value="{{ $vo->id }}" {{ $vo->id == $item->currency_id ? 'selected' : '' }}>
                                             {{ $vo->name }}
                                         </option>
                                     @endforeach
                                 </select>
+                            </td>
+                            <td>
+                                <span class="currency_icon_span">{{ $item->currency->currency_symbol }}</span>
                             </td>
 
                             <td data-key="price" class="padding_0">
@@ -211,7 +186,7 @@
 
                             <td data-key="money" class="padding_0">
                                 <input type="text" class="form-control input_no_border input-sm money"
-                                       name="money" readonly value="{{ $item->amount }}" placeholder="金额">
+                                       name="money" readonly value="{{ $item->money }}" placeholder="金额">
                             </td>
 
                             <td data-key="remark" class="padding_0">
@@ -233,6 +208,7 @@
                         <th>订单数量</th>
                         <th>入库数量<br><span id="total_quantity"></span></th>
                         <th>货币</th>
+                        <th>符号</th>
                         <th>单价</th>
                         <th>金额<br><span id="total_money"></span></th>
                         <th>备注</th>
@@ -308,7 +284,7 @@
 
 @section('script_js')
     <script>
-        var CURRENT_CUSTOMER_DEFAULT_GOODS = @json($goods ?? collect());
+        var CURRENT_CUSTOMER_DEFAULT_GOODS = [];
         var GOODS_SEARCH_KEYWORD = '';
         var inboundId = {{ $inbound->id }}; // 编辑页面ID
 
@@ -338,7 +314,7 @@
                 _this_tr.next().find('.bootstrap-select').find("button:first").remove();
                 _this_tr.next().find('.selectpicker').selectpicker("val");
                 _this_tr.next().find(".goods_id,.currency_id,.sku_id").attr('disabled',false);
-                _this_tr.next().find("input,select").not(".goods_id,.sku_id,.currency_id,.price").val("");
+                _this_tr.next().find("input,select").not(".goods_id,.sku_id,.currency_id").val("");
                 if( order_item_id != 0 ){
                     _this_tr.next().find(".goods_id,.sku_id").val(" ");
                     _this_tr.next().find(".order_item_id").val(0).attr('value',0);
@@ -726,15 +702,14 @@
 
                     $(".p_body tr").each(function (index) {
                         let $tr = $(this);
-                        formData.append(`goods[${index}][id]`, $tr.find("[name='inbound_item_id']").val());
                         formData.append(`goods[${index}][order_item_id]`, $tr.find("[name='order_item_id']").val());
-                        //formData.append(`goods[${index}][order_code]`, $tr.find("[name='order_code']").val());
+                        formData.append(`goods[${index}][order_code]`, $tr.find("[name='order_code']").val());
                         formData.append(`goods[${index}][goods_id]`, $tr.find("[name='goods_id']").val());
                         formData.append(`goods[${index}][sku_id]`, $tr.find("[name='sku_id']").val());
                         formData.append(`goods[${index}][quantity]`, $tr.find("[name='quantity']").val());
                         formData.append(`goods[${index}][currency_id]`, $tr.find("[name='currency_id']").val());
                         formData.append(`goods[${index}][price]`, $tr.find("[name='price']").val());
-                        //formData.append(`goods[${index}][money]`, $tr.find("[name='money']").val());
+                        formData.append(`goods[${index}][money]`, $tr.find("[name='money']").val());
                         formData.append(`goods[${index}][remark]`, $tr.find("[name='remark']").val());
                     });
 
@@ -749,8 +724,7 @@
                         success: res => {
                             if (res.code === 200) {
                                 $("#success").show();
-                                //setTimeout(() => location.href = "{{ route('admin.inbounds.index') }}", 1500);
-                                window.location.reload();
+                                setTimeout(() => location.href = "{{ route('admin.inbounds.index') }}", 1500);
                             } else {
                                 alert(res.msg);
                                 $("#p_confirm").prop('disabled', false).text('保存');

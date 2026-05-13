@@ -23,30 +23,35 @@
                 </div>
 
                 <div class="form-group">
-                    <select name="department_id" id="department_id" class="selectpicker" data-live-search="true" title="请选择部门">
-                        <option value="">全部部门</option>
+                    <select name="department_ids[]" id="department_ids" class="selectpicker" data-live-search="true"
+                            multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择部门">
                         @foreach($_departments_auth as $dept)
-                            <option value="{{ $dept->id }}" @if(request('department_id') == $dept->id) selected @endif>
+                            <option value="{{ $dept->id }}"
+                                    @if(in_array($dept->id, (array)request('department_ids', []))) selected @endif>
                                 {{ $dept->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <select name="customer_id" id="customer_id" class="selectpicker" data-live-search="true" title="请选择客户">
-                        <option value="">全部客户</option>
+                    <select name="customer_ids[]" id="customer_ids" class="selectpicker" data-live-search="true"
+                            multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择客户">
                         @foreach($_customers as $val)
-                            <option value="{{ $val->id }}" @if(request('customer_id') == $val->id) selected @endif>
+                            <option value="{{ $val->id }}"
+                                    @if(in_array($val->id, (array)request('customer_ids', []))) selected @endif>
                                 {{ $val->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <select name="supplier_id" id="supplier_id" class="selectpicker" data-live-search="true" title="请选择供应商">
-                        <option value="">全部供应商</option>
+                    <select name="supplier_ids[]" id="supplier_ids" class="selectpicker" data-live-search="true"
+                            multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择供应商">
                         @foreach($_suppliers as $val)
-                            <option value="{{ $val->id }}" @if(request('supplier_id') == $val->id) selected @endif>
+                            <option value="{{ $val->id }}"
+                                    @if(in_array($val->id, (array)request('supplier_ids', []))) selected @endif>
                                 {{ $val->name }}
                             </option>
                         @endforeach
@@ -101,6 +106,7 @@
                     @endphp
 
                     @foreach($inbound->items as $itemKey => $item)
+
                         <tr class="text-center">
                             {{-- 合并：第一行开始 --}}
                             @if($itemKey === 0)
@@ -148,13 +154,30 @@
                                 <td rowspan="{{ $itemCount }}">{{ $totalAmount }}</td>
                                 <td rowspan="{{ $itemCount }}">
                                     {!! \App\Enums\CommonStyleEnum::getClass('prompt',$inbound->inbound_code,80) !!}
+                                    <br>
+                                    <a href="{{ route('admin.inbounds.show', $inbound) }}" class="text-primary m-r-5">
+                                        <span class="glyphicon glyphicon-eye-open"></span> 查看
+                                    </a>
                                 </td>
                                 <td rowspan="{{ $itemCount }}">{{ $inbound->inbound_at_date }}</td>
                                 <td rowspan="{{ $itemCount }}">{{ $inbound->creator->name ?? '系统' }}</td>
                                 <td rowspan="{{ $itemCount }}">
-                                    <a href="{{ route('admin.inbounds.show',$inbound) }}" class="text-info m-r-5">
-                                        <span class="glyphicon glyphicon-eye-open"></span> 查看
-                                    </a>
+                                    @can('admin.inbounds.update')
+                                        @can('update',$inbound)
+                                            <a href="{{ route('admin.inbounds.edit', $inbound) }}" class="text-info m-r-5">
+                                                <span class="glyphicon glyphicon-edit"></span> 编辑
+                                            </a>
+                                        @endcan
+                                    @endcan
+
+                                    @can('admin.inbounds.destroy')
+                                        @can('delete',$inbound)
+                                            <a href="javascript:;" class="del_order text-danger" data-id="{{ $inbound->id }}">
+                                                <span class="glyphicon glyphicon-remove"></span> 删除
+                                            </a>
+                                        @endcan
+                                    @endcan
+
                                 </td>
                             @endif
                         </tr>
@@ -198,6 +221,18 @@
                 $('#search input[type="text"]').val('');
                 $('.selectpicker').selectpicker('deselectAll').selectpicker('refresh');
                 window.location.href = "{{ route('admin.inbounds.index') }}";
+            });
+
+            $("#inbound_list").on('click', ".del_order", function () {
+                if (!confirm("确定删除该订单？")) return false;
+                let id = $(this).data('id');
+                $.post("{{ route('admin.inbounds.destroy','') }}/" + id, {
+                    _token: "{{ csrf_token() }}",
+                    _method: "DELETE"
+                }, res => {
+                    alert(res.msg);
+                    if (res.code === 200) location.reload();
+                }).fail(err => alert(err.responseJSON?.msg || '删除失败'));
             });
         });
     </script>

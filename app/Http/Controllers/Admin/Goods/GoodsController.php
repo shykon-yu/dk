@@ -5,12 +5,11 @@ namespace App\Http\Controllers\Admin\Goods;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\GoodsRequest;
 use App\Models\Goods;
-use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsCategoryService;
 use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\WarehouseService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use App\Services\Admin\ViewDataService;
 
 class GoodsController extends Controller
 {
@@ -47,7 +46,8 @@ class GoodsController extends Controller
     public function edit(Goods $good)
     {
         $warehouses = app(WarehouseService::class)->getWarehouseByDepartmentId($good->department_id);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($good->department_id);
+        $customers = app(ViewDataService::class)->getCustomers();
+        $customers = $customers->where('department_id',$good->department_id)->values();
         $categoryChildren = app(GoodsCategoryService::class)->getChildrenByParentId($good->category->parent_id);
         return view('admin.goods.edit', compact('good','customers','warehouses','categoryChildren'));
     }

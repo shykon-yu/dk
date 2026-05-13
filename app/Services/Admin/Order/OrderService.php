@@ -18,18 +18,19 @@ class OrderService extends BaseService{
 
     public function getCacheAll()
     {
-        return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
-            return Order::query()
-                ->select(['id', 'name'])
-                ->where('status', 1)
-                ->orderBy('sort', 'asc')
-                ->get();
-        });
+//        return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
+//            return Order::query()
+//                ->select(['id', 'name'])
+//                ->where('status', 1)
+//                ->orderBy('sort', 'asc')
+//                ->get();
+//        });
     }
 
     public function getOrdersList($params)
     {
         $data = $this->modelClass::query()
+            ->has('items')
             ->when(!empty($params['order_code']), function ($q) use ($params) {
                 $q->where('order_code', 'like', '%' . trim($params['order_code']) . '%');
             })
@@ -107,7 +108,12 @@ class OrderService extends BaseService{
             }, function ($q) {
                 $q->whereIn('status', [OrderStatusEnum::NEW_ORDER,OrderStatusEnum::PROCESSING,OrderStatusEnum::PART_STOCK]);
             })
-
+            ->when(!empty($params['start_date']), function ($q) use ($params) {
+                $q->where('inbound_at', '>=', $params['start_date']);
+            })
+            ->when(!empty($params['end_date']), function ($q) use ($params) {
+                $q->where('inbound_at', '<=', $params['end_date']);
+            })
             ->orderBy('created_at', 'desc')
             ->with([
                 'order','order.departments','order.customers','order.suppliers','order.creator','order.updater',
@@ -249,6 +255,36 @@ class OrderService extends BaseService{
             return $model;
         } catch (\Exception $e) {
             throw new \Exception('状态修改失败，'.$e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+
+    public function getOrderItems( $params )
+    {
+        try {
+            if( empty($params['department_id']) || empty($params['customer_id']) || empty($params['supplier_id']) || empty($params['inbound_at']) ){
+                throw new \Exception('请选择',429);
+            }
+            $department_id = $params['department_id'];
+            $customer_id = $params['customer_id'];
+            $supplier_id = $params['supplier_id'];
+            $end_date = $params['inbound_at'].' 23:59:59';
+            $data = OrderItem::query()
+                ->whereHas('order',function($query) use($department_id,$customer_id,$supplier_id,$end_date){
+                    $query->where('department_id',$department_id);
+                    $query->where('customer_id',$customer_id);
+                    $query->where('supplier_id',$supplier_id);
+                    $query->whereNotIn('status',[OrderStatusEnum::ALL_STOCK,OrderStatusEnum::CANCELED]);
+                    $query->where('ordered_at','<=',$end_date);
+                })
+                ->with('order','goods','goodsSkus')
+                ->get();
+            //dd($data->first()->toArray());
+//            foreach( $data as $item ){
+//                dd($item->order->delivery_at_date);
+//            }
+            return $data;
+        } catch (\Exception $e) {
+            throw new \Exception('获取失败，'.$e->getMessage(), (int)$e->getCode() ?: 500);
         }
     }
 }

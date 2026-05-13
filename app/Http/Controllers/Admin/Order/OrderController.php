@@ -9,6 +9,7 @@ use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\Order\OrderService;
 use Illuminate\Http\Request;
+use App\Services\Admin\ViewDataService;
 
 class OrderController extends Controller
 {
@@ -53,7 +54,8 @@ class OrderController extends Controller
         $this->authorize('update', $order);
         $params = ['customer_id' => $order->customer_id,];
         $goods = app(GoodsService::class)->search($params);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($order->department_id);
+        $customers = app(ViewDataService::class)->getCustomers();
+        $customers = $customers->where('department_id',$order->department_id)->values();
         return view('admin.order.edit', compact('order', 'customers', 'goods'));
     }
 
@@ -62,7 +64,8 @@ class OrderController extends Controller
         $this->authorize('reorder', $order);
         $params = ['customer_id' => $order->customer_id,];
         $goods = app(GoodsService::class)->search($params);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($order->department_id);
+        $customers = app(ViewDataService::class)->getCustomers();
+        $customers = $customers->where('department_id',$order->department_id)->values();
         return view('admin.order.reorder', compact('order', 'customers', 'goods'));
     }
 

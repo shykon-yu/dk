@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class InboundItem extends Model
 {
     use SoftDeletes , FormatTimeTrait;
-    protected $fillable = ['inbound_id', 'order_id', 'goods_id', 'sku_id', 'quantity', 'price', 'amount', 'status', 'remark',];
+    protected $fillable = ['inbound_id', 'order_item_id', 'goods_id', 'sku_id','currency_id' ,'quantity', 'price', 'amount', 'status', 'remark',];
 
     // 关联入库总单
     public function inbound()
@@ -31,5 +31,10 @@ class InboundItem extends Model
     public function orderItem()
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
     }
 }

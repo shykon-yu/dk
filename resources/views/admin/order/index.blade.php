@@ -112,7 +112,8 @@
                     <th>星标</th>
                     <th>备注</th>
                     <th>创建人</th>
-                    <th>创建时间</th>
+                    <th>订货日期</th>
+                    <th>交货日期</th>
                     <th>操作</th>
                 </tr>
                 </thead>
@@ -209,7 +210,8 @@
                                     {!! \App\Enums\CommonStyleEnum::getClass('prompt',$order->remark,80) !!}
                                 </td>
                                 <td rowspan="{{ $itemCount }}">{!! \App\Enums\CommonStyleEnum::getClass('prompt',$order->creator->name,50) !!}</td>
-                                <td rowspan="{{ $itemCount }}">{{ $order->created_at_date }}</td>
+                                <td rowspan="{{ $itemCount }}">{{ $order->ordered_at_date }}</td>
+                                <td rowspan="{{ $itemCount }}">{{ $order->delivery_at_date }}</td>
                                 <td rowspan="{{ $itemCount }}">
                                     @can('admin.orders.update')
                                         @can('update',$order)

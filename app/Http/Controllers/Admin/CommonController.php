@@ -7,6 +7,7 @@ use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsCategoryService;
 use App\Services\Admin\Goods\GoodsService;
 use App\Services\Admin\Goods\GoodsSkuService;
+use App\Services\Admin\Order\OrderService;
 use App\Services\Admin\ViewDataService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -97,6 +98,15 @@ class CommonController extends Controller
                 'goods' => $goods,
                 'skus' => $skus
             ]
+        ]);
+    }
+
+    public function getOrderItemsList(Request $request)
+    {
+        $items = app(OrderService::class)->getOrderItems($request->all());
+        return response()->json([
+            'code' => 200,
+            'list' => $items
         ]);
     }
 }

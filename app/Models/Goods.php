@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Goods extends Base
 {
     use SoftDeletes , FormatTimeTrait;
-    protected $fillable = ['department_id','customer_id','supplier_id','name','code','customer_sku','brand_logo',
+    protected $fillable = ['department_id','customer_id','supplier_id','name','code','customer_sku','brand_logo','warehouse_id',
         'category_id','season_id','status','is_star','main_image','thumb_image','remark','created_user_id','updated_user_id',
         'old_id'];
     protected $dates = ['deleted_at'];

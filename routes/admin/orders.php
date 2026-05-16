@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Order\OrderController;
 use App\Http\Controllers\Admin\Order\InboundController;
+use App\Http\Controllers\Admin\Order\OutboundController;
 
 //订单
 Route::post('orders/star/{order}',[OrderController::class,'star'])->name('orders.star');
@@ -14,3 +15,7 @@ Route::resource('orders', OrderController::class);
 //入库
 Route::get('inbounds/items',[InboundController::class,'items'])->name('inbounds.items');
 Route::resource('inbounds', InboundController::class);
+
+//出库
+Route::get('outbounds/items',[OutboundController::class,'items'])->name('outbounds.items');
+Route::resource('outbounds', OutboundController::class);

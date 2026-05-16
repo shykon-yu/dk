@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Goods;
+use App\Models\GoodsSkuStock;
 use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,129 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->migrateInbound();
+        $this->fillFiled();
     }
+
+    public function fillFiled()
+    {
+        try {
+            DB::beginTransaction();
+
+            // 分块查询：解决大数据量内存溢出
+            GoodsSkuStock::query()->chunk(500, function ($stocks) {
+                foreach ($stocks as $item) {
+                    // 提前加载关联，避免N+1查询
+                    $sku = $item->sku; // 你的SKU模型
+                    if ($sku) {
+                        $goods = $sku->goods; // 商品模型
+                        if ($goods) {
+                            $item->update([
+                                'department_id' => $goods->department_id,
+                                'customer_id'   => $goods->customer_id,
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            DB::commit();
+            echo '填充完成！';
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            dd('错误：' . $exception->getMessage());
+        }
+    }
+
+    public function migrateOutbound()
+    {
+        $chunkSize = 50;
+
+        // 只拿订单号
+        $orderNumbers = DB::table('dk_outbound')
+            ->select('outbound_order_number')
+            ->distinct()
+            ->pluck('outbound_order_number'); // Collection
+
+        foreach ($orderNumbers->chunk($chunkSize) as $chunkOrderNos) {
+
+            DB::beginTransaction();
+            try {
+                $allItems = DB::table('dk_outbound')
+                    ->whereIn('outbound_order_number', $chunkOrderNos)
+                    ->get();
+
+                $grouped = $allItems->groupBy('outbound_order_number');
+                foreach ($grouped as $orderNo => $items) {
+                    // 防重复
+                    $exists = DB::table('outbounds')->where('outbound_code', $orderNo)->exists();
+                    if ($exists) {
+                        continue;
+                    }
+
+                    // ===================== 1. 插入主表 orders =====================
+                    $first = $items[0]; // 取第一条当主单信息
+
+                    $mainData = [
+                        'department_id' => $first->department_id,
+                        'customer_id'   => $first->custom_id,
+                        'clearance_id'   => $first->clearance_type_id,
+                        'payment_id'   => $first->logistics_paytype_id,
+                        'outbound_code'    => $orderNo,
+                        'tape'          =>$first->tape,
+                        'status'        => $first->status, // 刚下单
+                        'seal_container_no'     =>$items->where('container_door_sealing',1)->pluck('carton_number_start')->implode(',')??'',
+                        'outbound_at'    => $first->outbound_date ?? now(),
+                        'created_user_id' =>$first->user_id,
+                        'updated_user_id' =>$first->user_id,
+                        'created_at'    => $first->add_time_date ?? null,
+                        'updated_at'    => $first->update_time_date ?? null,
+                        'deleted_at'    => $first->delete_time_date ?? null,
+                    ];
+
+                    $orderId = DB::table('outbounds')->insertGetId($mainData);
+
+                    // ===================== 2. 插入子单 order_items =====================
+                    $insertItems = [];
+                    foreach ($items as $item) {
+                        $insertItems[] = [
+                            'outbound_id'          => $orderId,
+                            'goods_id'          => $item->products_id,
+                            'brand_logo'        => $item->brand_logo,
+                            'warehouse_id'      => $item->warehouse_id,
+                            'shipping_mark'     => $item->shipping_mark,
+                            'carton_no_start'   => $item->carton_number_start,
+                            'carton_no_end'     => $item->carton_number_end,
+                            'carton_qty'        => $item->box_number,
+                            'unit_carton_qty'  => $item->single_box_number,
+                            'sku_id'            => $item->products_color_id,
+                            'quantity'            => $item->outbound_number,
+                            'currency_id'       => $item->currency_id,
+                            'price'             => $item->price,
+                            'amount'             => bcmul($item->price, $item->outbound_number,2),
+                            'carton_length'      => $item->box_data_length,
+                            'carton_width'      => $item->box_data_width,
+                            'carton_height'     => $item->box_data_height,
+                            'cbm'               => $item->cbm,
+                            'craft_method_id'   => $item->products_processes_id,
+                            'gross_weight'      => $item->gross_weight,
+                            'net_weight'        => $item->net_weight,
+                            'remark'             => $item->remark,
+                            'status'            => $item->status,
+                            'created_at'        => $item->add_time_date,
+                            'updated_at'        => $item->update_time_date ?? null,
+                            'deleted_at'        => $item->delete_time_date ?? null,
+                        ];
+                    }
+                    DB::table('outbound_items')->insert($insertItems);
+                }
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        }
+    }
+
     public function migrateInbound()
     {
         $chunkSize = 50;

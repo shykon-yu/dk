@@ -12,8 +12,18 @@ class GoodsSkuStock extends Base
 {
     use FormatTimeTrait;
     protected $fillable = [
-        'goods_id','sku_id', 'warehouse_id', 'stock', 'lock_stock', 'available_stock',
+        'department_id','customer_id','goods_id','sku_id', 'warehouse_id', 'stock', 'lock_stock', 'available_stock',
     ];
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function goods()
     {
         return $this->belongsTo(Goods::class, 'goods_id');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Traits\FormatTimeTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,6 +33,8 @@ class Order extends Base
         static::updating(function ($model) {
             $model->updated_user_id = auth()->id();
         });
+
+        static::addGlobalScope(new DepartmentScope);
     }
 
     //总金额

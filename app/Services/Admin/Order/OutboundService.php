@@ -2,34 +2,28 @@
 namespace App\Services\Admin\Order;
 use App\Enums\OrderStatusEnum;
 use App\Models\GoodsSkuStock;
-use App\Models\Inbound;
-use App\Models\InboundItem;
-use App\Models\OrderItem;
+use App\Models\Outbound;
+use App\Models\OutboundItem;
 use App\Services\Admin\BaseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 
-class InboundService extends BaseService{
+class OutboundService extends BaseService{
     public function __construct()
     {
-        $this->modelClass = Inbound::class;
-        $this->cacheKey = 'inbounds_all';
+        $this->modelClass = Outbound::class;
+        $this->cacheKey = 'outbounds_all';
     }
 
     public function getCacheAll(){}
 
-    public function getInboundsList($params)
+    public function getOutboundsList($params)
     {
         $data = $this->modelClass::query()
             ->has('items')
-            ->when(!empty($params['inbound_code']), function ($q) use ($params) {
-                $q->where('inbound_code', 'like', '%' . trim($params['inbound_code']) . '%');
-            })
-            ->when(!empty($params['order_code']), function ($q) use ($params) {
-                $q->whereHas('items.orderItem.order', function ($qq) use ($params) {
-                    $qq->where('order_code', 'like', '%' . trim($params['order_code']) . '%');
-                });
+            ->when(!empty($params['outbound_code']), function ($q) use ($params) {
+                $q->where('outbound_code', 'like', '%' . trim($params['outbound_code']) . '%');
             })
             ->when(!empty($params['goods_name']), function ($q) use ($params) {
                 $q->whereHas('items.goods', function ($qq) use ($params) {
@@ -47,22 +41,19 @@ class InboundService extends BaseService{
             ->when(!empty($params['customer_ids']), function ($q) use ($params) {
                 $q->whereIn('customer_id', $params['customer_ids']);
             })
-            ->when(!empty($params['supplier_ids']), function ($q) use ($params) {
-                $q->whereIn('supplier_id', $params['supplier_ids']);
-            })
             ->when(!empty($params['start_date']), function ($q) use ($params) {
-                $q->where('inbound_at', '>=', $params['start_date']);
+                $q->where('outbound_at', '>=', $params['start_date']);
             })
             ->when(!empty($params['end_date']), function ($q) use ($params) {
-                $q->where('inbound_at', '<=', $params['end_date']);
+                $q->where('outbound_at', '<=', $params['end_date']);
             })
-            ->orderBy('inbound_at', 'desc')
+            ->orderBy('outbound_at', 'desc')
             ->with([
-                'items','items.orderItem','items.orderItem.order','department','customer','supplier','creator','updater',
+                'items','department','customer','creator','updater',
                 'items.goods','items.sku'
                 ])
-            ->get();
-        return $this->paginateCacheData($data, $params,$this->getPerPage());
+            ->paginate($this->getPerPage());
+        return $data;
     }
 
     public function getItems($params)
@@ -116,10 +107,10 @@ class InboundService extends BaseService{
     {
         try {
             //防止重复提交
-            $lockKey = "inbound:submit:" . $data['inbound_code'];
-            if (!Cache::add($lockKey, 'locked', 60)) {
-                throw new \Exception('请勿重复提交', 429);
-            }
+//            $lockKey = "outbound:submit:" . $data['outbound_code'];
+//            if (!Cache::add($lockKey, 'locked', 60)) {
+//                throw new \Exception('请勿重复提交', 429);
+//            }
 
             DB::beginTransaction();
             $items = $data['goods'];

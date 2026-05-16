@@ -152,6 +152,19 @@
                     </div>
                 </div>
 
+                <!-- 状态 -->
+                <div class="form-item">
+                    <label class="label">状态：</label>
+                    <div class="field">
+                        <label style="margin-right: 20px;">
+                            <input type="radio" name="status" value="1" {{ $menu['status'] == 1 ? 'checked' : '' }}> 启用
+                        </label>
+                        <label>
+                            <input type="radio" name="status" value="0" {{ $menu['status'] == 0 ? 'checked' : '' }}> 禁用
+                        </label>
+                    </div>
+                </div>
+
                 <!-- 操作按钮（和订单页/列表页按钮样式完全一致） -->
                 <div class="form-item">
                     <label class="label"></label>

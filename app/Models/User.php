@@ -62,6 +62,6 @@ class User extends Authenticatable
 
     public function getDeptIdArray()
     {
-        return $this->departments()->pluck('departments.id')->toArray();
+        return $this->departments()->pluck('id')->toArray();
     }
 }

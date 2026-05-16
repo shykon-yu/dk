@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Admin;
+use App\Services\Admin\Goods\CraftMethodService;
 use App\Services\Admin\Goods\CurrencyService;
 use App\Services\Admin\Goods\GoodsComponentService;
 use App\Services\Admin\Goods\GoodsSeasonService;
@@ -27,6 +28,7 @@ class ViewDataService
             '_goods_components' => $this->getGoodsComponents(),
             '_warehouses'    => $this->getWarehouses(),
             '_currencies'    => $this->getCurrencies(),
+            '_craft_methods' => $this->getCraftMethods(),
         ];
     }
 
@@ -95,6 +97,11 @@ class ViewDataService
     public function getCurrencies()
     {
         return app(CurrencyService::class)->getCacheAll();
+    }
+
+    public function getCraftMethods()
+    {
+        return app(CraftMethodService::class)->getCacheAll();
     }
 
 }

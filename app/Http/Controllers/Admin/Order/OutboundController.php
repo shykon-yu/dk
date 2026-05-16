@@ -3,48 +3,48 @@
 namespace App\Http\Controllers\Admin\Order;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\InboundRequest;
-use App\Models\Inbound;
+use App\Http\Requests\Admin\OutboundRequest;
 use App\Models\Order;
+use App\Models\Outbound;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsService;
-use App\Services\Admin\Order\InboundService;
+use App\Services\Admin\Order\OutboundService;
 use App\Services\Admin\ViewDataService;
 use Illuminate\Http\Request;
 
-class InboundController extends Controller
+class OutboundController extends Controller
 {
-    protected $inboundService;
-    public function __construct(InboundService $inboundService)
+    protected $outboundService;
+    public function __construct(OutboundService $outboundService)
     {
-        $this->middleware('permission:admin.inbounds.index')->only('index');
-        $this->middleware('permission:admin.inbounds.store')->only('create', 'store');
-        $this->middleware('permission:admin.inbounds.update')->only('edit', 'update','status','star');
-        $this->middleware('permission:admin.inbounds.destroy')->only('destroy','batchDestroy');
-        $this->inboundService = $inboundService;
+        $this->middleware('permission:admin.outbounds.index')->only('index');
+        $this->middleware('permission:admin.outbounds.store')->only('create', 'store');
+        $this->middleware('permission:admin.outbounds.update')->only('edit', 'update','status','star');
+        $this->middleware('permission:admin.outbounds.destroy')->only('destroy','batchDestroy');
+        $this->outboundService = $outboundService;
 
     }
 
     public function index(Request $request)
     {
-        $mainOrders = $this->inboundService->getInboundsList($request->all());
-        return view('admin.order.inbound.index', compact('mainOrders'));
+        $mainOrders = $this->outboundService->getOutboundsList($request->all());
+        return view('admin.order.outbound.index', compact('mainOrders'));
     }
 
     public function items(Request $request)
     {
-        $items = $this->inboundService->getItems($request->all());
-        return view('admin.order.inbound.items', compact('items'));
+        $items = $this->outboundService->getItems($request->all());
+        return view('admin.order.outbound.items', compact('items'));
     }
 
     public function create()
     {
-        return view('admin.order.inbound.create');
+        return view('admin.order.outbound.create');
     }
 
-    public function store( InboundRequest $request )
+    public function store( OutboundRequest $request )
     {
-        $this->inboundService->store($request->validated());
+        $this->outboundService->store($request->validated());
         return response()->json([
             'code' => 200,
             'msg' => '新增成功',

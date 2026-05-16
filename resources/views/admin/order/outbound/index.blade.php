@@ -3,17 +3,14 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span class="glyphicon glyphicon-th-list"></span>
-            <span class="panel-tit">入库管理</span>
+            <span class="panel-tit">出库管理</span>
         </div>
 
         <div class="panel-body navbar-form">
             <!-- 搜索栏 -->
-            <form method="get" action="{{ route('admin.inbounds.index') }}" id="search" class="form-inline" style="gap:8px; display:flex; flex-wrap:wrap; align-items:center;">
+            <form method="get" action="{{ route('admin.outbounds.index') }}" id="search" class="form-inline" style="gap:8px; display:flex; flex-wrap:wrap; align-items:center;">
                 <div class="form-group">
-                    <input type="text" name="inbound_code" placeholder="入库单号" class="form-control input-sm" value="{{ request('inbound_code') }}">
-                </div>
-                <div class="form-group">
-                    <input type="text" name="order_code" placeholder="订单号" class="form-control input-sm" value="{{ request('order_code') }}">
+                    <input type="text" name="outbound_code" placeholder="出库单号" class="form-control input-sm" value="{{ request('outbound_code') }}">
                 </div>
                 <div class="form-group">
                     <input type="text" name="goods_name" placeholder="商品名称" class="form-control input-sm" value="{{ request('goods_name') }}">
@@ -46,25 +43,13 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <select name="supplier_ids[]" id="supplier_ids" class="selectpicker" data-live-search="true"
-                            multiple data-live-search-placeholder="Search" data-actions-box="true" title="请选择供应商">
-                        @foreach($_suppliers as $val)
-                            <option value="{{ $val->id }}"
-                                    @if(in_array($val->id, (array)request('supplier_ids', []))) selected @endif>
-                                {{ $val->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
                 <!-- 日期时间段 -->
                 <div class="input-group" style="width: auto;">
-                    <input id="start_date" type="text" name="start_date" autocomplete="off" placeholder="入库起始日期" value="{{ request('start_date') }}" class="form-control input-sm">
+                    <input id="start_date" type="text" name="start_date" autocomplete="off" placeholder="出库起始日期" value="{{ request('start_date') }}" class="form-control input-sm">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
                 <div class="input-group" style="width: auto;">
-                    <input id="end_date" type="text" name="end_date" placeholder="入库结束日期" value="{{ request('end_date') }}" class="form-control input-sm">
+                    <input id="end_date" type="text" name="end_date" placeholder="出库截止日期" value="{{ request('end_date') }}" class="form-control input-sm">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 
@@ -74,68 +59,55 @@
                 </div>
             </form>
 
-            <table class="table table-bordered table-hover table-striped" id="inbound_table">
+            <table class="table table-bordered table-hover table-striped" id="outbound_table">
                 <thead>
                 <tr>
                     <th>选择</th>
                     <th>序号</th>
                     <th>客户</th>
-                    <th>供应商</th>
-                    <th>订单号</th>
                     <th>图片</th>
                     <th>货号</th>
                     <th>商品</th>
                     <th>SKU</th>
-                    <th>入库数量</th>
+                    <th>出库数量</th>
                     <th>单价</th>
                     <th>金额</th>
                     <th>总数量</th>
                     <th>总金额</th>
-                    <th>入库单号</th>
-                    <th>入库日期</th>
+                    <th>出库单号</th>
+                    <th>出库日期</th>
                     <th>录入人</th>
                     <th>操作</th>
                 </tr>
                 </thead>
-                <tbody id="inbound_list">
-                @foreach($mainOrders as $key => $inbound)
+                <tbody id="outbound_list">
+                @foreach($mainOrders as $key => $outbound)
                     @php
-                        $itemCount = $inbound->items->count();
-                        $totalQuantity = $inbound->items->sum('quantity');
-                        $totalAmount = $inbound->items->sum('amount');
+                        $itemCount = $outbound->items->count();
+                        $totalQuantity = $outbound->items->sum('quantity');
+                        $totalAmount = $outbound->items->sum('amount');
                     @endphp
 
-                    @foreach($inbound->items as $itemKey => $item)
+                    @foreach($outbound->items as $itemKey => $item)
 
                         <tr class="text-center">
                             {{-- 合并：第一行开始 --}}
                             @if($itemKey === 0)
                                 <td rowspan="{{ $itemCount }}">
-                                    <input type="checkbox" name="one[]" value="{{ $inbound->id }}">
+                                    <input type="checkbox" name="one[]" value="{{ $outbound->id }}">
                                 </td>
-                                <td rowspan="{{ $itemCount }}">{{ $key + 1 }}</td>
-                                <td rowspan="{{ $itemCount }}">{{ $inbound->customer->name ?? '-' }}</td>
-                                <td rowspan="{{ $itemCount }}">{{ $inbound->supplier->name ?? '-' }}</td>
+                                <td rowspan="{{ $itemCount }}"> {{ ($mainOrders->currentPage() - 1) * $mainOrders->perPage() + $key + 1 }}</td>
+                                <td rowspan="{{ $itemCount }}">{{ $outbound->customer->name ?? '-' }}</td>
                             @endif
 
                             {{-- 产品独立行 --}}
                             <td>
-                                @if($item->order_item_id != 0)
-                                    {!! \App\Enums\CommonStyleEnum::getClass('prompt',$item->orderItem->order->order_code,80) !!}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td>
                                 @if($item->goods->thumb_image)
                                     <div class="img-hover-box" style="position:relative; display:inline-block; vertical-align:middle; line-height:40px;">
-                                        {{-- 缩略图 --}}
                                         <img src="{{ asset($item->goods->thumb_image) }}"
                                              class="thumb-img click-preview"
                                              data-src="{{ asset($item->goods->main_image) }}"
                                              style="height:40px; max-height:40px; width:auto; object-fit:contain; border-radius:3px; cursor:pointer;">
-
-                                        {{-- 右侧悬浮预览图 --}}
                                         <img src="{{ asset($item->goods->thumb_image) }}"
                                              class="hover-preview"
                                              style="position:absolute; left:calc(100% + 10px); top:0; opacity:0; transition:all 0.2s; max-width:280px; max-height:280px; object-fit:contain; z-index:9999; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,0.2); pointer-events:none;">
@@ -151,36 +123,35 @@
                             <td>{{ $item->price }}</td>
                             <td>{{ $item->amount }}</td>
 
-                            {{-- 合并字段：总数量、总金额、入库单号、日期、操作人、操作 --}}
+                            {{-- 合并字段 --}}
                             @if($itemKey === 0)
                                 <td rowspan="{{ $itemCount }}">{{ $totalQuantity }}</td>
                                 <td rowspan="{{ $itemCount }}">{{ $totalAmount }}</td>
                                 <td rowspan="{{ $itemCount }}">
-                                    {!! \App\Enums\CommonStyleEnum::getClass('prompt',$inbound->inbound_code,80) !!}
+                                    {!! \App\Enums\CommonStyleEnum::getClass('prompt',$outbound->outbound_code,80) !!}
                                     <br>
-                                    <a href="{{ route('admin.inbounds.show', $inbound) }}" class="text-primary m-r-5">
+                                    <a href="{{ route('admin.outbounds.show', $outbound) }}" class="text-primary m-r-5">
                                         <span class="glyphicon glyphicon-eye-open"></span> 查看
                                     </a>
                                 </td>
-                                <td rowspan="{{ $itemCount }}">{{ $inbound->inbound_at_date }}</td>
-                                <td rowspan="{{ $itemCount }}">{{ $inbound->creator->name ?? '系统' }}</td>
+                                <td rowspan="{{ $itemCount }}">{{ $outbound->outbound_at_date }}</td>
+                                <td rowspan="{{ $itemCount }}">{{ $outbound->creator->name ?? '系统' }}</td>
                                 <td rowspan="{{ $itemCount }}">
-                                    @can('admin.inbounds.update')
-                                        @can('update',$inbound)
-                                            <a href="{{ route('admin.inbounds.edit', $inbound) }}" class="text-info m-r-5">
+                                    @can('admin.outbounds.update')
+                                        @can('update',$outbound)
+                                            <a href="{{ route('admin.outbounds.edit', $outbound) }}" class="text-info m-r-5">
                                                 <span class="glyphicon glyphicon-edit"></span> 编辑
                                             </a>
                                         @endcan
                                     @endcan
 
-                                    @can('admin.inbounds.destroy')
-                                        @can('delete',$inbound)
-                                            <a href="javascript:;" class="del_order text-danger" data-id="{{ $inbound->id }}">
+                                    @can('admin.outbounds.destroy')
+                                        @can('delete',$outbound)
+                                            <a href="javascript:;" class="del_order text-danger" data-id="{{ $outbound->id }}">
                                                 <span class="glyphicon glyphicon-remove"></span> 删除
                                             </a>
                                         @endcan
                                     @endcan
-
                                 </td>
                             @endif
                         </tr>
@@ -205,31 +176,29 @@
             $('.selectpicker').selectpicker();
 
             $("#start_date").datepicker({
-                maxDate: '+0y +0m +0d',//最大日期
+                maxDate: '+0y +0m +0d',
                 onSelect: function (dateText, inst) {
                     $("#end_date").datepicker("option", "minDate", dateText);
                 }
-
             });
             $("#end_date").datepicker({
-                maxDate: '+0y +0m +0d',//最大日期
+                maxDate: '+0y +0m +0d',
                 onSelect: function (dateText, inst) {
                     $("#start_date").datepicker("option", "maxDate", dateText);
                 }
             });
 
-            // 重置
             $('#R').click(function (e) {
                 e.preventDefault();
                 $('#search input[type="text"]').val('');
                 $('.selectpicker').selectpicker('deselectAll').selectpicker('refresh');
-                window.location.href = "{{ route('admin.inbounds.index') }}";
+                window.location.href = "{{ route('admin.outbounds.index') }}";
             });
 
-            $("#inbound_list").on('click', ".del_order", function () {
+            $("#outbound_list").on('click', ".del_order", function () {
                 if (!confirm("确定删除该订单？")) return false;
                 let id = $(this).data('id');
-                $.post("{{ route('admin.inbounds.destroy','') }}/" + id, {
+                $.post("{{ route('admin.outbounds.destroy','') }}/" + id, {
                     _token: "{{ csrf_token() }}",
                     _method: "DELETE"
                 }, res => {

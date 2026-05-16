@@ -10,6 +10,8 @@ Route::post('common/category-by-parent', [CommonController::class, 'getCategoryB
 Route::post('common/goods-search', [CommonController::class, 'getGoodsSearch'])->name('common.goods-search');
 //客户默认商品两百个
 Route::post('common/customer-default-goods', [CommonController::class, 'getCustomerDefaultGoods'])->name('common.customer-default-goods');
+//获取有库存的商品
+Route::post('common/customer-stock-goods', [CommonController::class, 'getCustomerGoodsWithStock'])->name('common.customer-stock-goods');
 //通过商品获取SKU
 Route::post('common/sku-by-goods', [CommonController::class, 'getSkuByGoods'])->name('common.sku-by-goods');
 //通过客户获取订单

@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Inbound extends Base
+class Outbound extends Base
 {
-    use SoftDeletes , FormatTimeTrait;
-
-    protected $fillable = ['department_id', 'customer_id', 'supplier_id', 'warehouse_id', 'inbound_code', 'status',
-        'batch_no', 'created_user_id', 'updated_user_id', 'inbound_at', 'comment'
+    use SoftDeletes,FormatTimeTrait;
+    protected $fillable = ['department_id', 'customer_id', 'clearance_id', 'payment_id','tape','seal_container_no' ,
+        'outbound_code', 'status', 'created_user_id', 'updated_user_id', 'outbound_at'
     ];
+    protected $dates = ['deleted_at'];
 
     static public function booted()
     {
@@ -40,21 +40,21 @@ class Inbound extends Base
         return $this->items->sum('amount');
     }
 
-    public function getInboundAtDateAttribute()
+    public function getOutboundAtDateAttribute()
     {
-        if (!array_key_exists('inbound_at', $this->attributes)) {
+        if (!array_key_exists('outbound_at', $this->attributes)) {
             return '';
         }
 
-        return $this->attributes['inbound_at']
-            ? Carbon::parse($this->attributes['inbound_at'])->format('Y-m-d')
+        return $this->attributes['outbound_at']
+            ? Carbon::parse($this->attributes['outbound_at'])->format('Y-m-d')
             : '';
     }
 
-     public function items()
-     {
-         return $this->hasMany(InboundItem::class);
-     }
+    public function items()
+    {
+        return $this->hasMany(OutboundItem::class);
+    }
 
     public function creator()
     {
@@ -75,16 +75,4 @@ class Inbound extends Base
     {
         return $this->belongsTo(Customer::class);
     }
-
-    public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
-
-    public function warehouse()
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
-
-
 }

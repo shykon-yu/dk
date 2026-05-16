@@ -16,16 +16,7 @@ class OrderService extends BaseService{
         $this->cacheKey = 'orders_all';
     }
 
-    public function getCacheAll()
-    {
-//        return Cache::remember($this->getFullCacheKey() , $this->cacheTtl , function(){
-//            return Order::query()
-//                ->select(['id', 'name'])
-//                ->where('status', 1)
-//                ->orderBy('sort', 'asc')
-//                ->get();
-//        });
-    }
+    public function getCacheAll(){}
 
     public function getOrdersList($params)
     {
@@ -114,6 +105,7 @@ class OrderService extends BaseService{
             ->when(!empty($params['end_date']), function ($q) use ($params) {
                 $q->where('inbound_at', '<=', $params['end_date']);
             })
+            ->departmentAuth()
             ->orderBy('created_at', 'desc')
             ->with([
                 'order','order.departments','order.customers','order.suppliers','order.creator','order.updater',

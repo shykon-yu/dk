@@ -142,30 +142,43 @@ class GoodsService extends BaseService{
 
             // 同步成分
             if (!empty($componentArray)) {
-                $syncData = $this->syncComponentsData($componentArray);
-                $goods->components()->sync($syncData);
+                throw new \Exception('至少有一种成分',429);
             }
+            $syncData = $this->syncComponentsData($componentArray);
+            $goods->components()->sync($syncData);
 
             // 保存SKU（颜色）
             if (!empty($colorArray)) {
-                //$insertColors = $this->dealColor($colorArray, $goods->id);
-                foreach( $colorArray as $color ) {
-                    $color['goods_id'] = $goods->id;
-                    $sku = Sku::create($color);
-                    //生成库存数据
-                    $stockData = $this->getStockArrayBySku($sku);
-                    $stockData['warehouse_id'] = $data['warehouse_id'];
-                    GoodsSkuStock::create($stockData);
-                }
+                throw new \Exception('至少有一种颜色',429);
             }
+            $this->createColors($colorArray,$goods);
 
+            //清理缓存
             $this->clearCache();
             DB::commit();
             return true;
-
         } catch (\Exception $e) {
             DB::rollBack();
             throw new \Exception('新增失败，'.$e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+
+    public function createColors(array $colors , Model $goods)
+    {
+        foreach( $colors as $color ) {
+            unset($color['id']);
+            $color['goods_id'] = $goods->id;
+            $sku = Sku::create($color);
+            //生成库存数据
+            $data = [
+                'department_id' => $goods->department_id,
+                'customer_id' => $goods->customer_id,
+                'warehouse_id' => $goods->warehouse_id,
+                'sku_id' => $sku->id,
+                'stock' => $sku->stock,
+                'goods_id' => $goods->id,
+            ];
+            GoodsSkuStock::create($data);
         }
     }
 
@@ -175,65 +188,66 @@ class GoodsService extends BaseService{
         [$data,$componentArray,$colorArray] = $this->separateData($data);//分离数据
         try {
             DB::beginTransaction();
-            //如果图片地址发生变化，记录旧地址以便删除
-            if( $model->main_image != $data['main_image'] ){
-                $mainImagePath = $model->main_image;
-                $thumbImagePath = $model->thumb_image;
-            }else{
-                $mainImagePath = null;
-                $thumbImagePath = null;
-            }
+
+            // 如果图片地址发生变化，记录旧地址以便删除
+            $mainImagePath = $model->main_image != $data['main_image'] ? $model->main_image : null;
+            $thumbImagePath = $model->thumb_image != $data['thumb_image'] ? $model->thumb_image : null;
 
             //修改商品数据
             $model->update($data);
 
             // 同步成分
-            if (!empty($componentArray)) {
-                $syncData = $this->syncComponentsData($componentArray);
-                $model->components()->sync($syncData);
+            if (empty($componentArray)) {
+                throw new \Exception('至少有一种成分',429);
             }
+            $syncData = $this->syncComponentsData($componentArray);
+            $model->components()->sync($syncData);
 
             //处理颜色
-            if( !empty($colorArray) ) {
-                $updateColors = [];//编辑数据
-                $deleteColors = [];//删除数据
-                $oldColors = $model->skus->toArray();//旧数据
-                /**
-                 * 遍历新数组和旧数据，对比id,有id将两个数组的这个id都删除
-                 * 最后新数据剩余的就是新增数据，旧数据剩余的就是需要删除的数据
-                 */
-                foreach( $oldColors as $oldCol => $oldVal ){
-                    foreach( $colorArray as $newCol => $newVal ){
-                        if( $oldVal['id'] == $newVal['id'] ){
-                            unset($newVal['stock']);//不能在商品编辑页面修改库存
-                            $updateColors[] = $newVal;
-                            unset($oldColors[$oldCol]);
-                            unset($colorArray[$newCol]);
-                        }
-                    }
-                }
-                //新增颜色数据
-                foreach( $colorArray as $newCol => $newVal ){
-                    unset($newVal['id']);
-                    $newVal['goods_id'] = $model->id;
-                    $sku = Sku::create($newVal);
-                    //生成库存数据
-                    $stockData = $this->getStockArrayBySku($sku);
-                    $stockData['warehouse_id'] = $data['warehouse_id'];
-                    GoodsSkuStock::create($stockData);
-                }
-                //dd($updateColors);
-                //编辑颜色数据
-                foreach( $updateColors as $updateCol => $updateVal ){
-                    Sku::where('id',$updateVal['id'])->update($updateVal);
-                }
+            if( empty($colorArray) ) {
+                throw new \Exception('至少有一种颜色',429);
+            }
+            $updateColors = [];//编辑数据
+            $deleteColors = [];//删除数据
+            $newColors = [];//新增数据
 
-                //删除颜色数据
-                foreach( $oldColors as $oldCol => $oldVal ){
-                    $deleteColors[] = $oldVal['id'];
+            // 旧数据：ID => 旧数据（构建哈希映射）
+            $oldColors = collect($model->skus)->keyBy('id')->toArray();
+            foreach ($colorArray as $color) {
+                $id = $color['id'] ?? 0;
+
+                // 存在：编辑
+                if ($id && isset($oldColors[$id])) {
+                    unset($color['stock']);//不能在商品编辑页面修改库存
+                    $updateColors[] = $color;
+                    unset($oldColors[$id]); // 删掉已匹配的
+                }
+                // 不存在：新增
+                else {
+                    $newColors[] = $color;
+                }
+            }
+
+            //新增颜色数据
+            if( !empty($newColors) ) {
+                $this->createColors($newColors,$model);
+            }
+
+            //编辑颜色数据
+            if( !empty($updateColors) ) {
+                foreach( $updateColors as $color ){
+                    Sku::where('id',$color['id'])->update($color);
+                }
+            }
+
+            //删除颜色数据
+            if( !empty($oldColors) ) {
+                foreach( $oldColors as $color ){
+                    $deleteColors[] = $color['id'];
                 }
                 Sku::destroy($deleteColors);
             }
+
             $this->clearCache();
             DB::commit();
             if( !is_null($mainImagePath) ){
@@ -312,15 +326,6 @@ class GoodsService extends BaseService{
         return $syncData;
     }
 
-    public function getStockArrayBySku(Model $model):array
-    {
-        return [
-            'sku_id' => $model->id,
-            'stock' => $model->stock,
-            'goods_id' => $model->goods_id,
-        ];
-    }
-
     // 商品搜索接口
     public function search($params)
     {
@@ -356,5 +361,14 @@ class GoodsService extends BaseService{
         } catch (\Exception $e) {
             throw new \Exception('获取失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }
+    }
+
+    public function getCustomerGoodsWithStock(array $params)
+    {
+        return Goods::whereHas('stocks', function ($query) use ($params) {
+            $query->where('customer_id', $params['customer_id'])
+                ->where('warehouse_id', $params['warehouse_id'])
+                ->where('stock', '>', 0);
+        })->get();
     }
 }

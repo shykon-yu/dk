@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\Admin;
 
+use App\Models\GoodsSkuStock;
 use App\Services\Admin\Goods\GoodsSeasonService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -338,6 +339,46 @@ abstract class BaseService
         if (!in_array($ext, $this->uploadExcelConfig['allowed_types'])) {
             $types = implode(',', $this->uploadExcelConfig['allowed_types']);
             throw new \Exception("只支持上传{$types}类型的表格");
+        }
+    }
+
+    /**
+     * 更新产品 SKU 库存（支持 入库增加 / 编辑扣减）
+     * 带行锁 lockForUpdate 防止高并发下库存超卖/错乱
+     * 不存在则自动创建库存记录
+     *
+     * @param array $item 入库单子单数据（必须包含 sku_id）
+     * @param int $warehouseId 仓库ID
+     * @param int $increaseQuantity 变动数量（正数=增加库存，负数=减少库存）
+     * @return void
+     */
+    public function updateGoodsSkuStock(array $item,int $warehouseId,int $increaseQuantity,Model $model=null)
+    {
+        // 锁定当前 SKU + 仓库 的库存记录，防止并发修改
+        $stock = GoodsSkuStock::query()
+            ->where('sku_id', $item['sku_id'])
+            ->where('warehouse_id', $warehouseId)
+            ->lockForUpdate()
+            ->first();
+
+        // 如果库存记录已存在 → 执行更新
+        if ($stock) {
+            // 累加/扣减 真实库存数量
+            $stock->stock += $increaseQuantity;
+            // 重新计算可用库存 = 总库存 - 锁定库存
+            $stock->available_stock = $stock->stock - $stock->lock_stock;
+            $stock->save();
+        } else {
+            // 库存记录不存在 → 创建初始化库存
+            GoodsSkuStock::create([
+                'department_id'   => $model->department_id,
+                'customer_id'     => $model->customer_id,
+                'goods_id'        => $item['goods_id'],
+                'warehouse_id'    => $warehouseId,
+                'sku_id'          => $item['sku_id'],
+                'stock'           => $increaseQuantity,
+                'available_stock' => $increaseQuantity,
+            ]);
         }
     }
 }

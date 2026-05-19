@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Models\Traits\FormatTimeTrait;
+use App\Services\Admin\Goods\GoodsService;
+use App\Services\Admin\Goods\GoodsSkuService;
+use App\Services\Admin\Goods\GoodsSkuStockService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +28,52 @@ class OutboundItem extends Base
             $query->whereIn('department_id', $deptIds);
         });
     }
+
+    public function getAvailableGoodsAttribute()
+    {
+        $customerId = $this->outbound->customer_id;
+        $warehouseId = $this->warehouse_id;
+        $params = ['customer_id' => $customerId, 'warehouse_id' => $warehouseId];
+        // 查出：当前客户 + 当前仓库 + 库存>0 的商品
+        $goods = app(GoodsService::class)->getCustomerGoodsWithStock($params);
+
+        // 如果当前选中商品不在列表 → 追加进去
+        $currentGoods = $this->goods;
+        if ($currentGoods && !$goods->contains('id', $currentGoods->id)) {
+            $goods->prepend($currentGoods);
+        }
+
+        return $goods;
+    }
+
+    public function getAvailableSkusAttribute()
+    {
+        if (!$this->goods) return collect();
+
+        $warehouseId = $this->warehouse_id;
+        $goodsId = $this->goods_id;
+        $params = ['warehouse_id' => $warehouseId, 'goods_id' => $goodsId];
+        $skus = app(GoodsSkuService::class)->getSkus($params);
+        // 库存>0 的 SKU
+
+        // 当前选中SKU不在列表 → 合并
+        $currentSku = $this->sku;
+        if ($currentSku && !$skus->contains('id', $currentSku->id)) {
+            $skus->prepend($currentSku);
+        }
+
+        return $skus;
+    }
+
+    public function getStockInfoAttribute()
+    {
+        $skuId = $this->sku_id;
+        $warehouseId = $this->warehouse_id;
+        $params = ['sku_id' => $skuId, 'warehouse_id' => $warehouseId];
+        $stockInfo = app(GoodsSkuStockService::class)->getStockInfo($params);
+        return $stockInfo;
+    }
+
     // 关联入库总单
     public function outbound()
     {
@@ -50,4 +99,10 @@ class OutboundItem extends Base
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    public function craftMethod()
+    {
+        return $this->belongsTo(CraftMethod::class);
+    }
+
 }

@@ -17,8 +17,11 @@ class GoodsSkuStockService extends BaseService{
     public function getStockInfo($params)
     {
         try {
-            $skus = [];
-            return $skus;
+            return $this->getModelClass()::query()
+                ->where('warehouse_id', $params['warehouse_id'])
+                ->where('sku_id', $params['sku_id'])
+                ->with('sku')
+                ->first();
         } catch (\Exception $e) {
             throw new \Exception('获取失败，'.$e->getMessage(), $e->getCode() ?: 500);
         }

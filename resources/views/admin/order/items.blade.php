@@ -65,7 +65,15 @@
                         @endforeach
                     </select>
                 </div>
-
+                <!-- 日期时间段 -->
+                <div class="input-group" style="width: auto;">
+                    <input id="start_date" type="text" name="start_date" autocomplete="off" placeholder="入库起始日期" value="{{ request('start_date')??today()->subMonth(8)->format('Y-m-d') }}" class="form-control input-sm">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
+                <div class="input-group" style="width: auto;">
+                    <input id="end_date" type="text" name="end_date" placeholder="入库结束日期" value="{{ request('end_date') }}" class="form-control input-sm">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-info btn-sm">搜索</button>
                     <button type="reset" class="btn btn-warning btn-sm" id="R">重置</button>
@@ -156,7 +164,19 @@
     <script>
         $(function () {
             $('.selectpicker').selectpicker();
+            $("#start_date").datepicker({
+                maxDate: '+0y +0m +0d',//最大日期
+                onSelect: function (dateText, inst) {
+                    $("#end_date").datepicker("option", "minDate", dateText);
+                }
 
+            });
+            $("#end_date").datepicker({
+                maxDate: '+0y +0m +0d',//最大日期
+                onSelect: function (dateText, inst) {
+                    $("#start_date").datepicker("option", "maxDate", dateText);
+                }
+            });
             $('#R').click(function (e) {
                 e.preventDefault();
                 $('#search input[type="text"]').val('');

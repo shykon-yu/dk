@@ -51,7 +51,7 @@
 
                 <!-- 清关方式 -->
                 <select class="form-control input-sm" name="clearance_id" id="clearance_id">
-                    <option value="">-清关方式-</option>
+{{--                    <option value="">-清关方式-</option>--}}
                     @foreach($_clearances as $vo)
                         <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
@@ -59,7 +59,7 @@
 
                 <!-- 支付方式 -->
                 <select class="form-control input-sm" name="payment_id" id="payment_id">
-                    <option value="">-支付方式-</option>
+{{--                    <option value="">-支付方式-</option>--}}
                     @foreach($_payments as $vo)
                         <option value="{{ $vo->id }}">{{ $vo->name }}</option>
                     @endforeach
@@ -98,6 +98,7 @@
                         <th>产品</th>
                         <th>图片</th>
                         <th>颜色</th>
+                        <th>库存</th>
                         <th>品牌</th>
                         <th>箱数</th>
                         <th>单箱数</th>
@@ -173,6 +174,11 @@
                             <select name="sku_id" class="form-control input_no_border input-sm sku_id">
                                 <option value="">--颜色--</option>
                             </select>
+                        </td>
+
+                        <!-- 库存 -->
+                        <td data-key="stock" class="padding_0 stock">
+
                         </td>
 
                         <!-- 品牌 -->
@@ -274,6 +280,7 @@
                         <th>产品</th>
                         <th>图片</th>
                         <th>颜色</th>
+                        <th>库存</th>
                         <th>品牌</th>
                         <th>箱数<br><span id="total_carton_qty"></span></th>
                         <th>单箱数</th>
@@ -329,21 +336,47 @@
             $(document).on("click", ".goods_plus", function () {
                 let _this_tr = $(this).parents("tr");
                 let main_image = _this_tr.find('.thumb-img').data('src');
-                let skulist = _this_tr.data('skuList');
+                let carton_no_start = parseInt(_this_tr.find('.carton_no_end').val()) || 0;
+                carton_no_start++;
                 let tr = _this_tr.clone();
                 _this_tr.after(tr);
                 _this_tr.next().find('.thumb-img').data('src',main_image);
-                _this_tr.next().data('skuList',skulist);
                 _this_tr.next().find('.bootstrap-select').find("button:first").remove();
                 _this_tr.next().find('.selectpicker').selectpicker("val");
                 _this_tr.next().find("input,select").not(".brand_logo,.warehouse_id,.goods_id," +
                     ".shipping_mark,.carton_no_start,.carton_no_end,.carton_qty,.unit_carton_qty,.currency_id,.quantity," +
                     ".carton_length,.carton_width,.carton_height,.cbm,.gross_weight,.net_weight,.craft_method_id").val("");
+                _this_tr.next().find('.carton_no_start,.carton_no_end').val(carton_no_start);
                 _this_tr.next().find('.selectpicker').selectpicker('refresh');
                 _this_tr.next().find('.selectpicker').selectpicker('render');
-                // setTimeout(() => {
-                //     _this_tr.next().find('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD);
-                // }, 100);
+                refreshSerial();
+            });
+
+            // 混行（克隆，但箱号起始截止不变）
+            $(document).on("click", ".goods_mix", function () {
+                let _this_tr = $(this).parents("tr");
+                let main_image = _this_tr.find('.thumb-img').data('src');
+
+                // 🔥 关键区别：不++，直接用原来的值
+                let carton_no_start = parseInt(_this_tr.find('.carton_no_start').val()) || 0;
+
+                let tr = _this_tr.clone();
+
+                _this_tr.after(tr);
+                _this_tr.next().find('.thumb-img').data('src', main_image);
+                _this_tr.next().find('.bootstrap-select').find("button:first").remove();
+                _this_tr.next().find('.selectpicker').selectpicker("val");
+                _this_tr.next().find("input,select").not(".brand_logo,.warehouse_id,.goods_id," +
+                    ".shipping_mark,.carton_no_start,.carton_no_end,.carton_qty,.unit_carton_qty,.currency_id," +
+                    ".carton_length,.carton_width,.carton_height,.craft_method_id").val("");
+
+                // 🔥 克隆行的起始、截止 = 原行的值（不+1）
+                _this_tr.next().find('.carton_no_start').val(carton_no_start);
+                _this_tr.next().find('.carton_no_end').val(carton_no_start);
+
+                _this_tr.next().find('.selectpicker').selectpicker('refresh');
+                _this_tr.next().find('.selectpicker').selectpicker('render');
+
                 refreshSerial();
             });
 
@@ -380,11 +413,11 @@
                 tr.find(".amount").val((qty * price).toFixed(2));
 
                 // 3. CBM：长×宽×高×箱数
-                let l = Number(tr.find(".carton_length").val() || 0);
-                let w = Number(tr.find(".carton_width").val() || 0);
-                let h = Number(tr.find(".carton_height").val() || 0);
-                let cbm = (l * w * h * carton_qty)
-                tr.find(".cbm").val(cbm.toFixed(2));
+                // let l = Number(tr.find(".carton_length").val() || 0);
+                // let w = Number(tr.find(".carton_width").val() || 0);
+                // let h = Number(tr.find(".carton_height").val() || 0);
+                // let cbm = (l * w * h * carton_qty)
+                // tr.find(".cbm").val(cbm.toFixed(2));
 
                 // 4. 净重 = 毛重 - 2
                 let gw = Number(tr.find(".gross_weight").val() || 0);
@@ -396,7 +429,7 @@
                 sum("carton_qty", 0);
                 sum("quantity", 0);
                 sum("amount", 2);
-                sum("cbm", 2);
+                // sum("cbm", 2);
             }
 
             function sum(field, dec) {
@@ -453,11 +486,12 @@
                 return;
             });
 
-            // 客户 → 商品
+            // 仓库 → 商品
             $(document).on('change', '.warehouse_id', function () {
                 let customer_id = $('#customer_id').val();
                 let warehouse_id = $(this).val();
-                let $select = $("select[name='goods_id']");
+                let _tr = $(this).closest('tr');
+                let $select = _tr.find("[name='goods_id']");
                 if (!customer_id) {
                     alert('请选择客户');
                     $(this).val("");
@@ -483,42 +517,11 @@
                 });
             });
 
-            // 商品搜索
-            {{--$(document).on('shown.bs.select', '.goods_id', function () {--}}
-            {{--    let $select = $(this).find("select[name='goods_id']");--}}
-            {{--    let customer_id = $("#customer_id").val();--}}
-            {{--    setTimeout(() => $('.bs-searchbox input').val(GOODS_SEARCH_KEYWORD), 100);--}}
-            {{--    $('.bs-searchbox input').off('keyup').on('keyup', function () {--}}
-            {{--        GOODS_SEARCH_KEYWORD = $(this).val().trim();--}}
-            {{--        let keyword = GOODS_SEARCH_KEYWORD;--}}
-            {{--        if (keyword === '') {--}}
-            {{--            let str = "";--}}
-            {{--            $.each(CURRENT_CUSTOMER_DEFAULT_GOODS, (i, item) => {--}}
-            {{--                str += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;--}}
-            {{--            });--}}
-            {{--            $select.html(str).selectpicker('refresh').selectpicker('render');--}}
-            {{--            return;--}}
-            {{--        }--}}
-            {{--        if (keyword.length < 2) return;--}}
-            {{--        $.ajax({--}}
-            {{--            url: "{{ route('admin.common.goods-search') }}",--}}
-            {{--            type: 'POST',--}}
-            {{--            data: {customer_id, keyword, _token: "{{ csrf_token() }}"},--}}
-            {{--            success: res => {--}}
-            {{--                let html = '';--}}
-            {{--                $.each(res.data, (i, item) => {--}}
-            {{--                    html += `<option value="${item.id}">${item.customer_sku} ${item.name}</option>`;--}}
-            {{--                });--}}
-            {{--                $select.html(html).selectpicker('refresh').selectpicker('render');--}}
-            {{--            }--}}
-            {{--        });--}}
-            {{--    });--}}
-            {{--});--}}
-
             // 商品 → 颜色
             $(document).on('change', '.goods_id', function () {
                 let goods_id = $(this).val();
                 let _this = $(this).parents('tr');
+                let warehouse_id = _this.find('.warehouse_id').val();
                 _this.find('.sku_id').html("<option>请选择</option>");
                 _this.find('.price').val('');
                 if (!goods_id) return false;
@@ -526,7 +529,7 @@
                 $.ajax({
                     url: "{{ route('admin.common.sku-by-goods') }}",
                     type: 'POST',
-                    data: {goods_id, _token: "{{ csrf_token() }}"},
+                    data: {goods_id,warehouse_id, _token: "{{ csrf_token() }}"},
                     success: res => {
                         if (res.code === 200) {
                             let thumb = "{{ asset(':url') }}".replace(':url', res.data.goods.thumb_image);
@@ -537,7 +540,7 @@
                                 str += `<option value="${item.id}">${item.color}</option>`;
                             });
                             _this.find('.sku_id').html(str);
-                            _this.data('skuList', res.data.skus);
+                            // _this.data('skuList', res.data.skus);
                             _this.find('.brand_logo').val(res.data.goods.brand_logo);
                         }
                     }
@@ -547,21 +550,28 @@
             // 颜色 → 单价
             $(document).on('change', '.sku_id', function () {
                 let $sku = $(this);
-                let skuId = $sku.val();
+                let sku_id = $sku.val();
                 let $tr = $sku.parents('tr');
-                let skuList = $tr.data('skuList');
-                if (!skuId || !skuList) return;
-                let sku = skuList.find(item => item.id == skuId);
-                $tr.find('.price').val(sku.sell_price);
-                $tr.find('.currency_id').val(sku.sell_currency_id);
-                calcRow($(this).parents("tr"));
-                totalAll();
-            });
+                let warehouse_id = $tr.find('.warehouse_id').val();
+                if( !warehouse_id ){
+                    alert('请选择仓库');
+                    return false;
+                }
 
-            // 货币符号
-            $(document).on('change', '.currency_id', function () {
-                let icon = $(this).find('option:selected').attr('currency_icon');
-                $(this).parents('tr').find('.currency_icon_span').html(icon);
+                $.ajax({
+                    url: "{{ route('admin.common.get-stock-info') }}",
+                    type: 'POST',
+                    data: {sku_id,warehouse_id, _token: "{{ csrf_token() }}"},
+                    success: res => {
+                        if (res.code === 200) {
+                            $tr.find('.price').val(res.data.sku.sell_price);
+                            $tr.find('.currency_id').val(res.data.sku.sell_currency_id);
+                            $tr.find('.stock').html(res.data.stock);
+                            calcRow($(this).parents("tr"));
+                            totalAll();
+                        }
+                    }
+                });
             });
 
             // ====================== 提交 ======================
@@ -601,7 +611,7 @@
                         let t = $(this);
                         fd.append(`goods[${i}][brand_logo]`, t.find(".brand_logo").val());
                         fd.append(`goods[${i}][warehouse_id]`, t.find(".warehouse_id").val());
-                        fd.append(`goods[${i}][goods_id]`, t.find(".goods_id").val());
+                        fd.append(`goods[${i}][goods_id]`, t.find("[name='goods_id']").val());
                         fd.append(`goods[${i}][sku_id]`, t.find(".sku_id").val());
                         fd.append(`goods[${i}][shipping_mark]`, t.find(".shipping_mark").val());
                         fd.append(`goods[${i}][carton_no_start]`, t.find(".carton_no_start").val());

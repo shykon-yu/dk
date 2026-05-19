@@ -39,6 +39,7 @@ class MenuRequest extends BaseRequest
             }],
             'route'      => ['nullable', 'string', 'max:100'],
             'sort'       => ['nullable', 'integer', 'min:0'],
+            'status'       => ['required', 'integer', 'min:0'],
             'create_permission_type' => ['required'],
             'permission_prefix' => ['nullable', 'string', 'max:30',
                 Rule::requiredIf( fn()=>request()->create_permission_type != 0 ),],

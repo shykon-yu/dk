@@ -52,6 +52,9 @@ class InboundService extends BaseService{
             })
             ->when(!empty($params['start_date']), function ($q) use ($params) {
                 $q->where('inbound_at', '>=', $params['start_date']);
+            },
+            function ($q) {
+                $q->where('inbound_at', '>=', today()->subMonths(8));
             })
             ->when(!empty($params['end_date']), function ($q) use ($params) {
                 $q->where('inbound_at', '<=', $params['end_date']);
@@ -67,11 +70,17 @@ class InboundService extends BaseService{
 
     public function getItems($params)
     {
-        $data = OrderItem::query()
+        $data = InboundItem::query()
+            ->when(!empty($params['inbound_code']), function ($q) use ($params) {
+                $q->whereHas('inbound', function ($qq) use ($params) {
+                    $qq->where('inbound_code', 'like', '%' . trim($params['inbound_code']) . '%');
+                });
+            })
             ->when(!empty($params['order_code']), function ($q) use ($params) {
-                $q->whereHas('order', function ($qq) use ($params) {
+                $q->whereHas('orderItem.order', function ($qq) use ($params) {
                     $qq->where('order_code', 'like', '%' . trim($params['order_code']) . '%');
-                });            })
+                });
+            })
             ->when(!empty($params['goods_name']), function ($q) use ($params) {
                 $q->whereHas('goods', function ($qq) use ($params) {
                     $qq->where('name', 'like', '%' . trim($params['goods_name']) . '%');
@@ -83,30 +92,28 @@ class InboundService extends BaseService{
                 });
             })
             ->when(!empty($params['department_ids']), function ($q) use ($params) {
-                $q->whereHas('inbound', function ($qq) use ($params) {
-                    $qq->whereIn('department_id', $params['department_ids']);
-                });
+                $q->whereIn('o.department_id', $params['department_ids']);
             })
             ->when(!empty($params['customer_ids']), function ($q) use ($params) {
-                $q->whereHas('inbound', function ($qq) use ($params) {
-                    $qq->whereIn('customer_id', $params['customer_ids']);
-                });
+                $q->whereIn('o.customer_id', $params['customer_ids']);
             })
             ->when(!empty($params['supplier_ids']), function ($q) use ($params) {
-                $q->whereHas('inbound', function ($qq) use ($params) {
-                    $qq->whereIn('supplier_id', $params['supplier_ids']);
-                });
+                $q->whereIn('o.supplier_id', $params['supplier_ids']);
             })
-            ->when(!empty($params['status']), function ($q) use ($params) {
-                $q->whereIn('status', $params['status']);
-            }, function ($q) {
-                $q->whereIn('status', [OrderStatusEnum::NEW_ORDER,OrderStatusEnum::PROCESSING,OrderStatusEnum::PART_STOCK]);
+            ->when(!empty($params['start_date']), function ($q) use ($params) {
+                $q->where('o.inbound_at', '>=', $params['start_date']);
+            },
+            function ($q) {
+                $q->where('o.inbound_at', '>=', today()->subMonths(8));
             })
-
-            ->orderBy('created_at', 'desc')
+            ->when(!empty($params['end_date']), function ($q) use ($params) {
+                $q->where('o.inbound_at', '<=', $params['end_date']);
+            })
+            ->leftJoin('inbounds as o','o.id','=','inbound_items.inbound_id')
+            ->orderBy('o.inbound_at', 'desc')
             ->with([
-                'inbound','order','inbound.department','inbound.customer','inbound.supplier','inbound.creator','inbound.updater',
-                'goods','goodsSkus'
+                'inbound','orderItem','orderItem.order','inbound.department','inbound.customer','inbound.supplier','inbound.creator','inbound.updater',
+                'goods','sku'
             ])
             ->get();
         return $this->paginateCacheData($data, $params,$this->getPerPage());
@@ -221,7 +228,7 @@ class InboundService extends BaseService{
             $this->updateOrderItemReceivedQuantity($item,$item['quantity']);
 
             // 更新库存
-            $this->updateGoodsSkuStock($item, $inbound->warehouse_id , $item['quantity']);
+            $this->updateGoodsSkuStock($item, $inbound->warehouse_id , $item['quantity'] , $inbound);
         }
     }
 
@@ -240,7 +247,7 @@ class InboundService extends BaseService{
                 $this->updateGoodsSkuStock($item,$inbound->warehouse_id,$quantityDiff);
             }else{
                 //如果更换了仓库，原仓库扣除老数量，新仓库增加前端传过来的数量
-                $this->updateGoodsSkuStock($item,$oldWarehouseId,$oldQuantity);
+                $this->updateGoodsSkuStock($item,$oldWarehouseId,-$oldQuantity);
                 $this->updateGoodsSkuStock($item,$newWarehouseId,$item['quantity']);
             }
 
@@ -293,43 +300,6 @@ class InboundService extends BaseService{
 
         // 保存到数据库
         $orderItem->save();
-    }
-
-    /**
-     * 更新产品 SKU 库存（支持 入库增加 / 编辑扣减）
-     * 带行锁 lockForUpdate 防止高并发下库存超卖/错乱
-     * 不存在则自动创建库存记录
-     *
-     * @param array $item 入库单子单数据（必须包含 sku_id）
-     * @param int $warehouseId 仓库ID
-     * @param int $increaseQuantity 变动数量（正数=增加库存，负数=减少库存）
-     * @return void
-     */
-    public function updateGoodsSkuStock(array $item,int $warehouseId,int $increaseQuantity)
-    {
-        // 锁定当前 SKU + 仓库 的库存记录，防止并发修改
-        $stock = GoodsSkuStock::query()
-            ->where('sku_id', $item['sku_id'])
-            ->where('warehouse_id', $warehouseId)
-            ->lockForUpdate()
-            ->first();
-
-        // 如果库存记录已存在 → 执行更新
-        if ($stock) {
-            // 累加/扣减 真实库存数量
-            $stock->stock += $increaseQuantity;
-            // 重新计算可用库存 = 总库存 - 锁定库存
-            $stock->available_stock = $stock->stock - $stock->lock_stock;
-            $stock->save();
-        } else {
-            // 库存记录不存在 → 创建初始化库存
-            GoodsSkuStock::create([
-                'warehouse_id'    => $warehouseId,
-                'sku_id'          => $item['sku_id'],
-                'stock'           => $increaseQuantity,
-                'available_stock' => $increaseQuantity,
-            ]);
-        }
     }
 
     public function destroy(Model $model): bool

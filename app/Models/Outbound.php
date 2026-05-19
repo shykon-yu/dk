@@ -11,11 +11,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Outbound extends Base
 {
+
     use SoftDeletes,FormatTimeTrait;
+
     protected $fillable = ['department_id', 'customer_id', 'clearance_id', 'payment_id','tape','seal_container_no' ,
         'outbound_code', 'status', 'created_user_id', 'updated_user_id', 'outbound_at'
     ];
     protected $dates = ['deleted_at'];
+
 
     static public function booted()
     {
@@ -74,5 +77,15 @@ class Outbound extends Base
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function clearance()
+    {
+        return $this->belongsTo(Clearance::class);
+    }
+
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class);
     }
 }

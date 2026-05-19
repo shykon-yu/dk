@@ -17,5 +17,7 @@ Route::get('inbounds/items',[InboundController::class,'items'])->name('inbounds.
 Route::resource('inbounds', InboundController::class);
 
 //出库
+Route::get('outbounds/logistics/index',[OutboundController::class,'logisticsIndex'])->name('outbounds.logistics.index');
+Route::get('outbounds/logistics/show/{outbound_at}/{customer_id}/{clearance_id}/{payment_id}',[OutboundController::class,'logisticsShow'])->name('outbounds.logistics.show');
 Route::get('outbounds/items',[OutboundController::class,'items'])->name('outbounds.items');
 Route::resource('outbounds', OutboundController::class);

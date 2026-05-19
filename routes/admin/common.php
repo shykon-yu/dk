@@ -16,3 +16,5 @@ Route::post('common/customer-stock-goods', [CommonController::class, 'getCustome
 Route::post('common/sku-by-goods', [CommonController::class, 'getSkuByGoods'])->name('common.sku-by-goods');
 //通过客户获取订单
 Route::post('common/get-order-items-list', [CommonController::class, 'getOrderItemsList'])->name('common.get-order-items-list');
+//sku_id customer_id → 库存
+Route::post('common/get-stock-info', [CommonController::class, 'getStockInfo'])->name('common.get-stock-info');

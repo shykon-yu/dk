@@ -7,6 +7,8 @@ use App\Models\Department;
 use App\Models\Goods;
 use App\Models\GoodsSkuStock;
 use App\Models\OrderItem;
+use App\Models\Outbound;
+use App\Models\OutboundItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use App\Models\Sku;
@@ -19,9 +21,71 @@ class UserMigrationController extends Controller
     //将老users数据表修改成新表样式集合，存入users表里
     public function migrate()
     {
-        $this->fillFiled();
+        $this->fillShipping();
     }
 
+
+    public function fillShipping()
+    {
+        try{
+            DB::beginTransaction();
+            $customerBrandMap = OutboundItem::where('carton_length',0)->get();
+                //->update(['shipping_mark' => 'DM']);
+                //->get();
+            //dd($customerBrandMap);
+            foreach ($customerBrandMap as $customerBrand){
+                $data = OutboundItem::query()
+                    ->where('outbound_id',$customerBrand->outbound_id)
+                    ->where('outbound_items.carton_no_start',$customerBrand->carton_no_start)
+                    ->where('carton_length','>',0)
+                    ->get()->first();
+                if( !$data ){
+                 continue;
+                }
+                $customerBrand->update([
+                    'carton_length'=>$data->carton_length,
+                    'carton_width'=>$data->carton_width,
+                    'carton_height'=>$data->carton_height,
+                    'cbm'=>$data->cbm,
+                    'gross_weight'=>$data->gross_weight,
+                    'net_weight'=>$data->net_weight,
+                ]);
+            }
+//            foreach ($customerBrandMap as $customerId => $brandLogo) {
+//                OutboundItem::whereNull('brand_logo')
+//                    ->whereHas('outbound', fn($q) => $q->where('customer_id', $customerId))
+//                    ->update(['brand_logo' => $brandLogo]);
+//            }
+            DB::commit();
+        }catch (\Exception $exception){
+            DB::rollBack();
+            dd($exception);
+        }
+    }
+    public function fillOutboundFiled()
+    {
+        try{
+            DB::beginTransaction();
+            $customerBrandMap = OutboundItem::whereNull('brand_logo')
+                ->select('outbound_id')
+                ->distinct()
+                ->with(['outbound:id,customer_id', 'outbound.customer:id,brand_logo'])
+                ->get()
+                ->pluck('outbound.customer')
+                ->filter()
+                ->mapWithKeys(fn($c) => [$c->id => $c->brand_logo]);
+
+            foreach ($customerBrandMap as $customerId => $brandLogo) {
+                OutboundItem::whereNull('brand_logo')
+                    ->whereHas('outbound', fn($q) => $q->where('customer_id', $customerId))
+                    ->update(['brand_logo' => $brandLogo]);
+            }
+            DB::commit();
+        }catch (\Exception $exception){
+            DB::rollBack();
+            dd($exception);
+        }
+    }
     public function fillFiled()
     {
         try {

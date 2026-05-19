@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\GoodsSkuStock;
 use App\Services\Admin\CustomerService;
 use App\Services\Admin\Goods\GoodsCategoryService;
 use App\Services\Admin\Goods\GoodsService;
@@ -110,9 +109,21 @@ class CommonController extends Controller
     //通过商品获取sku
     public function getSkuByGoods(Request $request)
     {
-        $request->validate(['goods_id'=>['required','integer','exists:goods,id']]);
-        $goods = app(GoodsService::class)->getGoodsInfo($request->goods_id);
-        $skus = $goods->skus;
+        $request->validate(
+            [
+                'goods_id'=>['required','integer','exists:goods,id'],
+                'warehouse_id'=>['nullable','integer','exists:warehouses,id'],
+            ]
+        );
+        $params = [
+            'goods_id' => $request->goods_id,
+            'warehouse_id' => $request->warehouse_id??null,
+        ];
+        $skus = app(GoodsSkuService::class)->getSkus($params);
+        $goods = $skus->first()->goods;
+//        dd($data);
+//        $goods = app(GoodsService::class)->getGoodsInfo($request->goods_id);
+//        $skus = $goods->skus;
         return response()->json([
             'code' => 200,
             'data' => [
@@ -142,10 +153,11 @@ class CommonController extends Controller
             'sku_id' => $request->sku_id,
             'warehouse_id' => $request->warehouse_id,
         ];
-        $goods = app(GoodsSkuStockService::class)->getStockInfo($params);
+        $data = app(GoodsSkuStockService::class)->getStockInfo($params);
+
         return response()->json([
             'code' => 200,
-            'data' => $goods
+            'data' => $data
         ]);
     }
 }

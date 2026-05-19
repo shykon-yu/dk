@@ -27,6 +27,7 @@ class OutboundRequest extends FormRequest
             'comment'             => ['nullable', 'string'],
 
             'goods'                      => ['required', 'array', 'min:1'],
+            'goods.*.id' => ['nullable', 'integer', 'min:1'],
             'goods.*.brand_logo'         => ['nullable', 'string'],
             'goods.*.warehouse_id'       => ['required', 'integer', 'min:1'],
             'goods.*.goods_id'           => ['required', 'integer', 'min:1'],

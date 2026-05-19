@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Scopes\DepartmentScope;
 use App\Models\Traits\FormatTimeTrait;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,6 +25,17 @@ class InboundItem extends Base
         return $query->whereHas('order', function ($query) use ($deptIds) {
             $query->whereIn('department_id', $deptIds);
         });
+    }
+
+    public function getInboundAtDateAttribute()
+    {
+        if (!array_key_exists('inbound_at', $this->attributes)) {
+            return '';
+        }
+
+        return $this->attributes['inbound_at']
+            ? Carbon::parse($this->attributes['inbound_at'])->format('Y-m-d')
+            : '';
     }
     // 关联入库总单
     public function inbound()

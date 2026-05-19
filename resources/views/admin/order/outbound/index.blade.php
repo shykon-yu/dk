@@ -45,11 +45,11 @@
 
                 <!-- 日期时间段 -->
                 <div class="input-group" style="width: auto;">
-                    <input id="start_date" type="text" name="start_date" autocomplete="off" placeholder="出库起始日期" value="{{ request('start_date') }}" class="form-control input-sm">
+                    <input id="start_date" type="text" name="start_date" autocomplete="off" placeholder="入库起始日期" value="{{ request('start_date')??today()->subMonth(8)->format('Y-m-d') }}" class="form-control input-sm">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
                 <div class="input-group" style="width: auto;">
-                    <input id="end_date" type="text" name="end_date" placeholder="出库截止日期" value="{{ request('end_date') }}" class="form-control input-sm">
+                    <input id="end_date" type="text" name="end_date" placeholder="入库结束日期" value="{{ request('end_date') }}" class="form-control input-sm">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                 </div>
 

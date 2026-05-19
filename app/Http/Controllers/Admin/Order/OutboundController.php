@@ -17,7 +17,7 @@ class OutboundController extends Controller
     protected $outboundService;
     public function __construct(OutboundService $outboundService)
     {
-        $this->middleware('permission:admin.outbounds.index')->only('index');
+        $this->middleware('permission:admin.outbounds.index')->only('index','show','logisticsIndex');
         $this->middleware('permission:admin.outbounds.store')->only('create', 'store');
         $this->middleware('permission:admin.outbounds.update')->only('edit', 'update','status','star');
         $this->middleware('permission:admin.outbounds.destroy')->only('destroy','batchDestroy');
@@ -42,7 +42,7 @@ class OutboundController extends Controller
         return view('admin.order.outbound.create');
     }
 
-    public function store( OutboundRequest $request )
+    public function store(OutboundRequest $request )
     {
         $this->outboundService->store($request->validated());
         return response()->json([
@@ -50,81 +50,72 @@ class OutboundController extends Controller
             'msg' => '新增成功',
         ]);
     }
-    public function edit(Inbound $inbound)
+    public function edit(Outbound $outbound)
     {
-        $this->authorize('update', $inbound);
-        $params = ['customer_id' => $inbound->customer_id,];
-        $goods = app(GoodsService::class)->search($params);
-        $customers = app(CustomerService::class)->getCustomerByDepartmentId($inbound->department_id);
+        $this->authorize('update', $outbound);
+        // 预加载子单 + 商品 + SKU + 库存
+        $outbound->load([
+            'items.goods',
+            'items.sku',
+        ]);
+        $customers = app(CustomerService::class)->getCustomerByDepartmentId($outbound->department_id);
         $warehouses = app(ViewDataService::class)->getWarehouses();
-        $warehouses = $warehouses->where('department_id', $inbound->department_id)->values();
-        return view('admin.order.inbound.edit', compact('inbound', 'customers', 'goods', 'warehouses'));
+        $warehouses = $warehouses->where('department_id', $outbound->department_id)->values();
+        return view('admin.order.outbound.edit', compact('outbound', 'customers', 'warehouses'));
     }
 
-    public function show(Inbound $inbound)
+    public function show(Outbound $outbound)
     {
-        $this->authorize('update', $inbound);
-        $params = ['customer_id' => $inbound->customer_id,];
-        $goods = app(GoodsService::class)->search($params);
-        $customers = app(ViewDataService::class)->getCustomers();
-        $customers = $customers->where('department_id',$inbound->department_id)->values();
+        // 预加载子单 + 商品 + SKU + 库存
+        $outbound->load([
+            'items.goods',
+            'items.sku',
+        ]);
+        $customers = app(CustomerService::class)->getCustomerByDepartmentId($outbound->department_id);
         $warehouses = app(ViewDataService::class)->getWarehouses();
-        $warehouses = $warehouses->where('department_id', $inbound->department_id)->values();
-        return view('admin.order.inbound.show', compact('inbound', 'customers', 'goods', 'warehouses'));
+        $warehouses = $warehouses->where('department_id', $outbound->department_id)->values();
+        return view('admin.order.outbound.show', compact('outbound', 'customers', 'warehouses'));
     }
 
-    public function update(InboundRequest $request, Inbound $inbound)
+    public function update(OutboundRequest $request, Outbound $outbound)
     {
-        $this->inboundService->update($inbound,$request->validated());
+        $this->outboundService->update($outbound,$request->validated());
         return response()->json([
             'code' => 200,
             'msg' => '修改成功'
         ]);
     }
 
-    public function destroy(Inbound $inbound)
+    public function destroy(Outbound $outbound)
     {
-        $this->authorize('delete', $inbound);
-        $this->inboundService->destroy($inbound);
+        $this->authorize('delete', $outbound);
+        $this->outboundService->destroy($outbound);
         return response()->json([
             'code' => 200,
             'msg' => '删除成功',
         ]);
     }
 
-    public function status(Request $request , Order $order)
+    //物流订单页面
+    public function logisticsIndex(Request $request)
     {
-        $request->validate(['status'=>['required','integer','between:0,3']]);
-        $order = $this->orderService->changeStatus($order, $request->status);
-        return response()->json([
-            'code'=>200,
-            'status'=>$order->status,
-            'msg' => '状态修改成功',
-        ]);
+        $mainOrders = $this->outboundService->getOutboundsList($request->all(),true);
+        return view('admin.order.outbound.logistics.index', compact('mainOrders'));
     }
 
-    public function star(Request $request , Order $order)
+    //物流详情页面
+    public function logisticsShow($order_at,$customer_id,$clearance_id,$payment_id)
     {
-        $request->validate(['star'=>['required','integer','between:0,1']]);
-        $order = $this->orderService->changeStar($order, $request->star);
-        return response()->json([
-            'code'=>200,
-            'star'=>$order->is_star,
-            'msg' => '状态修改成功',
-        ]);
-    }
-
-    public function uploadExcel(Request $request)
-    {
-        $file = $request->file('file');
-        $uploadResult = $this->orderService->uploadExcel($file);
-        return response()->json([
-            'code' => 200,
-            'msg' => '上传成功',
-            'data' => [
-                'id' => $uploadResult['id'],
-                'name' => $uploadResult['name']
-            ]
-        ]);
+        $params = [
+            'customer_id' => $customer_id,
+            'clearance_id' => $clearance_id,
+            'payment_id' => $payment_id,
+            'outbound_at' => $order_at,
+        ];
+        $items = $this->outboundService->getLogisticsItems($params);
+        $fields = ['shipping_mark_text','goods_id'];//传入需要合并的字段
+        $fieldArray = $this->outboundService->getFieldMerge($items, $fields);//获取合并字段坐标
+        $indexRowspan = $this->outboundService->getIndexRowspan($fieldArray);//转换成页面需要的序号=>合并行数
+        return view('admin.order.outbound.logistics.show', compact('items', 'indexRowspan'));
     }
 }
